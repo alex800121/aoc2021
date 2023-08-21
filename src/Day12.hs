@@ -31,17 +31,16 @@ walkTill end cave currentPath cache
         nexts = Set.filter ((> 0) . (`MultiSet.occur` path)) $ cave Map.! start
         visited' = MultiSet.insert start visited
         paths = MultiSet.fromSet $ Set.map (, smallCaves, path', visited') nexts
-        paths1 = MultiSet.fromSet $ Set.map (, smallCaves, MultiSet.fromSet $ MultiSet.toSet path', visited') $ Set.filter (`Set.notMember` smallCaves) nexts
-        paths2= MultiSet.fromSet $ Set.map (, Set.insert start smallCaves, path', visited') $ Set.filter (`Set.notMember` smallCaves) nexts
+        paths1 = MultiSet.fromSet $ Set.map (, smallCaves, MultiSet.fromSet $ (Set.\\ smallCaves) $ MultiSet.toSet path', visited') $ Set.filter (`Set.notMember` smallCaves) nexts
+        paths2= MultiSet.fromSet $ Set.map (, Set.insert start smallCaves, path', visited') nexts
     nextPath = MultiSet.unionsMap f currentPath'
 
 day12 :: IO ()
 day12 = do
-  input <- Map.map Set.fromList . Map.unionsWith (<>) . map ((\(x : y : _) -> Map.fromList [(x, [y]), (y, [x])]) . splitOn "-") . lines <$> readFile "input/test12.txt"
-  -- input <- Map.unionsWith (<>) . map ((\(x : y : _) -> Map.fromList [(x, [y]), (y, [x])]) . splitOn "-") . lines <$> readFile "input/input12.txt"
+  input <- Map.map Set.fromList . Map.unionsWith (<>) . map ((\(x : y : _) -> Map.fromList [(x, [y]), (y, [x])]) . splitOn "-") . lines <$> readFile "input/input12.txt"
   let notVisitedA = MultiSet.fromSet $ Map.keysSet input
       notVisitedB = MultiSet.fold (\x acc -> case x of
         x | x == "start" || x == "end" || isUpper (head x) -> acc
         x -> MultiSet.insert x acc) notVisitedA notVisitedA
-  mapM_ print $ MultiSet.toOccurList $ walkTill "end" input (MultiSet.singleton ("start", Set.empty, notVisitedB, MultiSet.empty)) MultiSet.empty
-  print $ MultiSet.size $ walkTill "end" input (MultiSet.singleton ("start", Set.empty, notVisitedB, MultiSet.empty)) MultiSet.empty
+  putStrLn $ ("day12a: " ++) $ show $ MultiSet.size $ walkTill "end" input (MultiSet.singleton ("start", Set.empty, notVisitedA, MultiSet.empty)) MultiSet.empty
+  putStrLn $ ("day12b: " ++) $ show $ MultiSet.size $ walkTill "end" input (MultiSet.singleton ("start", Set.empty, notVisitedB, MultiSet.empty)) MultiSet.empty
