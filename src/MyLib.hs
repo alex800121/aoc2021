@@ -1,32 +1,33 @@
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveFoldable #-}
+{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE StandaloneDeriving #-}
+
 module MyLib where
 
-import Text.Megaparsec
-import Data.Void ( Void )
-import Text.Megaparsec.Char.Lexer (signed, decimal)
-import Text.Megaparsec.Char (space)
-import qualified Data.Sequence as S
-import Data.Char (ord, intToDigit, digitToInt)
+import Control.Monad (guard, mplus)
 import Data.Bits (xor)
+import Data.Char (digitToInt, intToDigit, ord)
+import Data.Foldable (Foldable (foldr'), toList)
+import Data.List (delete, foldl', group, nub, tails)
 import Data.List.Split (chunksOf)
-import Data.Foldable (toList, Foldable (foldr'))
 import Data.Map (Map)
 import qualified Data.Map as Map
-import Data.List (delete, tails, group, nub, foldl')
 import Data.Maybe (fromMaybe, maybeToList)
-import Debug.Trace
-import Control.Monad (guard, mplus)
 import Data.Proxy (Proxy (..))
+import qualified Data.Sequence as S
+import Data.Void (Void)
+import Debug.Trace
+import Text.Megaparsec
+import Text.Megaparsec.Char (space)
+import Text.Megaparsec.Char.Lexer (decimal, signed)
 
-(+&):: (Num a, Num b) => (a, b) -> (a, b) -> (a, b)
+(+&) :: (Num a, Num b) => (a, b) -> (a, b) -> (a, b)
 (a, b) +& (c, d) = (a + c, b + d)
 
-(-&):: (Num a, Num b) => (a, b) -> (a, b) -> (a, b)
+(-&) :: (Num a, Num b) => (a, b) -> (a, b) -> (a, b)
 (a, b) -& (c, d) = (a - c, b - d)
 
 data Tree a = Leaf a | Branch a [Tree a] deriving (Show, Eq, Ord)
@@ -58,14 +59,14 @@ instance Enum Direction where
 
 type Parser = Parsec Void String
 
-emcd :: Integral a => a -> a -> (a, a, a)
+emcd :: (Integral a) => a -> a -> (a, a, a)
 emcd a 0 = (a, 1, 0)
-emcd a b = (g, s, t-(q*s))
-  where 
-    (q, r) = divMod a b 
+emcd a b = (g, s, t - (q * s))
+  where
+    (q, r) = divMod a b
     (g, t, s) = emcd b r
 
-firstRepeat :: Eq a => [a] -> Maybe (Int, a)
+firstRepeat :: (Eq a) => [a] -> Maybe (Int, a)
 firstRepeat = g 0 []
   where
     g _ _ [] = Nothing
@@ -80,39 +81,40 @@ mapFirst f (a, c) = (f a, c)
 third :: (a, b, c) -> c
 third (_, _, x) = x
 
-data KnotList = KnotList { focus :: Int, list :: S.Seq Int } deriving Show 
+data KnotList = KnotList {focus :: Int, list :: S.Seq Int} deriving (Show)
 
 twistKnotList :: Int -> KnotList -> KnotList
 twistKnotList i (KnotList f l)
-  | i + f > len = let
-    excess = i + f - len
-    (left, right) = S.splitAt f (l S.>< S.take excess l)
-    (l', newHead) = S.splitAt len (left S.>< S.reverse right)
-    in KnotList f (newHead S.>< S.drop excess l')
-  | otherwise = let
-    (left, right') = S.splitAt f l
-    (mid, right) = S.splitAt i right'
-    in KnotList f (left S.>< S.reverse mid S.>< right)
-  where len = S.length l
+  | i + f > len =
+      let excess = i + f - len
+          (left, right) = S.splitAt f (l S.>< S.take excess l)
+          (l', newHead) = S.splitAt len (left S.>< S.reverse right)
+       in KnotList f (newHead S.>< S.drop excess l')
+  | otherwise =
+      let (left, right') = S.splitAt f l
+          (mid, right) = S.splitAt i right'
+       in KnotList f (left S.>< S.reverse mid S.>< right)
+  where
+    len = S.length l
 
 knotHash :: String -> String
-knotHash s = let
-  inputSuffix = [17, 31, 73, 47, 23]
-  initSeq = KnotList 0 $ S.fromList [0..255]
-  moveFocus :: Int -> KnotList -> KnotList
-  moveFocus i l = l {focus = (l.focus + i) `mod` S.length l.list}
-  step :: Int -> Int -> KnotList -> KnotList
-  step skip i = moveFocus (skip + i) . twistKnotList i
-  run :: [Int] -> KnotList -> KnotList
-  run i k = foldl (flip (uncurry step)) k l
-    where
-      l = zip [0..] i
-  process :: S.Seq Int -> String
-  process = map intToDigit . concatMap ((\x -> [x `div` 16, x `mod` 16]) . foldl1 xor) . chunksOf 16 . toList
-  l = map ord s ++ inputSuffix
-  list = take (length l * 64) $ cycle l
-  k = run list initSeq
-  in process k.list
+knotHash s =
+  let inputSuffix = [17, 31, 73, 47, 23]
+      initSeq = KnotList 0 $ S.fromList [0 .. 255]
+      moveFocus :: Int -> KnotList -> KnotList
+      moveFocus i l = l {focus = (l.focus + i) `mod` S.length l.list}
+      step :: Int -> Int -> KnotList -> KnotList
+      step skip i = moveFocus (skip + i) . twistKnotList i
+      run :: [Int] -> KnotList -> KnotList
+      run i k = foldl (flip (uncurry step)) k l
+        where
+          l = zip [0 ..] i
+      process :: S.Seq Int -> String
+      process = map intToDigit . concatMap ((\x -> [x `div` 16, x `mod` 16]) . foldl1 xor) . chunksOf 16 . toList
+      l = map ord s ++ inputSuffix
+      list = take (length l * 64) $ cycle l
+      k = run list initSeq
+   in process k.list
 
 intToBits :: Int -> String
 intToBits x
@@ -157,11 +159,11 @@ sumVariants target choices
   | target == 0 = [[]]
   | target /= 0 && null choices = []
   | otherwise = do
-    (a : t) <- init $ tails $ choices
-    b <- sumVariants (target - a) t
-    return (a : b)
+      (a : t) <- init $ tails $ choices
+      b <- sumVariants (target - a) t
+      return (a : b)
 
-primeFactors :: Integral a => a -> [a]
+primeFactors :: (Integral a) => a -> [a]
 primeFactors a = f a primes []
   where
     primes = takeWhile (<= sqrtCeiling a) primeSeive
@@ -171,36 +173,40 @@ primeFactors a = f a primes []
       | x `mod` y == 0 = f (x `div` y) (y : ys) (y : ls)
       | otherwise = f x ys ls
 
-primeFactors' :: Integral a => a -> [(Int, a)]
+primeFactors' :: (Integral a) => a -> [(Int, a)]
 primeFactors' = map ((,) <$> length <*> head) . group . primeFactors
 
-factors :: Integral a => a -> [a]
-factors x = let
-  p = primeFactors' x
-  f [] = [1]
-  f ((n, a) : xs) = (*) <$> map (a ^) [0 .. n] <*> f xs
-  in f p
+factors :: (Integral a) => a -> [a]
+factors x =
+  let p = primeFactors' x
+      f [] = [1]
+      f ((n, a) : xs) = (*) <$> map (a ^) [0 .. n] <*> f xs
+   in f p
 
-sqrtCeiling :: Integral a => a -> a
+sqrtCeiling :: (Integral a) => a -> a
 sqrtCeiling = ceiling . sqrt . fromIntegral
 
-primeSeive :: Integral a => [a]
-primeSeive = f [2..]
+primeSeive :: (Integral a) => [a]
+primeSeive = f [2 ..]
   where
     f (x : xs) = x : f (filter ((/= 0) . (`mod` x)) xs)
 
 data Nat = Z | S Nat deriving (Eq, Ord)
+
 data SNat (n :: Nat) where
   SZ :: SNat Z
   SS :: SNat n -> SNat (S n)
-  
+
 data Vec (n :: Nat) a where
   Nil :: Vec 'Z a
   Cons :: a -> Vec n a -> Vec (S n) a
 
-deriving instance Eq a => Eq (Vec n a)
-deriving instance Ord a => Ord (Vec n a)
+deriving instance (Eq a) => Eq (Vec n a)
+
+deriving instance (Ord a) => Ord (Vec n a)
+
 deriving instance Functor (Vec n)
+
 deriving instance Foldable (Vec n)
 
 instance Show Nat where
@@ -213,12 +219,12 @@ instance Show Nat where
 --   Nil == Nil = True
 -- instance (Eq a, Eq (Vec n a)) => Eq (Vec ('S n) a) where
 --   Cons x xs == Cons y ys = x == y && xs == ys
-  
-instance Show a => Show (Vec n a) where
+
+instance (Show a) => Show (Vec n a) where
   show Nil = "<>"
   show (Cons x xs) = '<' : show x ++ show' xs
     where
-      show' :: Show a => Vec n a -> String
+      show' :: (Show a) => Vec n a -> String
       show' Nil = ">"
       show' (Cons y ys) = ',' : show y ++ show' ys
 
@@ -232,11 +238,11 @@ instance Applicative (Vec 'Z) where
   pure _ = Nil
   Nil <*> Nil = Nil
 
-instance Applicative (Vec n) => Applicative (Vec ('S n)) where
+instance (Applicative (Vec n)) => Applicative (Vec ('S n)) where
   pure a = Cons a (pure a)
   Cons f fs <*> Cons x xs = Cons (f x) (fs <*> xs)
 
-instance Num a => Num (Vec 'Z a) where
+instance (Num a) => Num (Vec 'Z a) where
   Nil + Nil = Nil
   Nil * Nil = Nil
   abs Nil = Nil
@@ -252,40 +258,39 @@ instance (Num a, Num (Vec n a), Applicative (Vec n)) => Num (Vec ('S n) a) where
   fromInteger = pure . fromInteger
   negate (Cons x xs) = Cons (negate x) (negate xs)
 
-manhattan :: Num a => Vec n a -> a
+manhattan :: (Num a) => Vec n a -> a
 manhattan = sum . fmap abs
 
-overlapEucVec :: Ord a => Vec n (a, a) -> Vec n (a, a) -> Maybe (Vec n (a, a))
+overlapEucVec :: (Ord a) => Vec n (a, a) -> Vec n (a, a) -> Maybe (Vec n (a, a))
 overlapEucVec Nil Nil = pure Nil
 overlapEucVec (Cons (a, b) xs) (Cons (c, d) ys)
   | maxOfSmall < minOfBig = do
-    rest <- overlapEucVec xs ys
-    pure (Cons (maxOfSmall, minOfBig) rest)
+      rest <- overlapEucVec xs ys
+      pure (Cons (maxOfSmall, minOfBig) rest)
   | otherwise = Nothing
   where
     maxOfSmall = max a c
     minOfBig = max b d
 
- 
-subtractEucVec :: Ord a => Vec n (a, a) -> Vec n (a, a) -> [Vec n (a, a)]
+subtractEucVec :: (Ord a) => Vec n (a, a) -> Vec n (a, a) -> [Vec n (a, a)]
 subtractEucVec Nil Nil = []
 subtractEucVec (Cons (a, b) xs) (Cons (c, d) ys) =
-     [ Cons (x, y) ys | (x, y) <- [(max b c, d), (c, min a d)], y > x ]
-  ++ [ Cons (x', y') rest | (x', y') <- [(max a c, min b d)], y' > x', rest <- subtractEucVec xs ys ]
+  [Cons (x, y) ys | (x, y) <- [(max b c, d), (c, min a d)], y > x]
+    ++ [Cons (x', y') rest | (x', y') <- [(max a c, min b d)], y' > x', rest <- subtractEucVec xs ys]
 
-subtractEucVecs' :: Ord a => Vec n (a, a) -> [Vec n (a, a)] -> [Vec n (a, a)]
+subtractEucVecs' :: (Ord a) => Vec n (a, a) -> [Vec n (a, a)] -> [Vec n (a, a)]
 subtractEucVecs' x = concatMap (subtractEucVec x)
 
-subtractEucVecs :: Ord a => [Vec n (a, a)] -> [Vec n (a, a)] -> [Vec n (a, a)]
+subtractEucVecs :: (Ord a) => [Vec n (a, a)] -> [Vec n (a, a)] -> [Vec n (a, a)]
 subtractEucVecs xs ys = foldr' subtractEucVecs' ys xs
 
-jointEucVec :: Ord a => Vec n (a, a) -> Vec n (a, a) -> [Vec n (a, a)]
+jointEucVec :: (Ord a) => Vec n (a, a) -> Vec n (a, a) -> [Vec n (a, a)]
 jointEucVec x y = x : subtractEucVec x y
 
-jointEucVecs' :: Ord a => [Vec n (a, a)] -> Vec n (a, a) -> [Vec n (a, a)]
+jointEucVecs' :: (Ord a) => [Vec n (a, a)] -> Vec n (a, a) -> [Vec n (a, a)]
 jointEucVecs' xs y = y : concatMap (subtractEucVec y) xs
 
-jointEucVecs :: Ord a => [Vec n (a, a)] -> [Vec n (a, a)]
+jointEucVecs :: (Ord a) => [Vec n (a, a)] -> [Vec n (a, a)]
 jointEucVecs = foldl' jointEucVecs' []
 
 fromVec :: Vec n a -> [a]
