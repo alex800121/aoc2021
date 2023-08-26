@@ -38,7 +38,8 @@ common shared
         pureMD5,
         base16-bytestring,
         freer-simple,
-        multiset
+        multiset,
+        pqueue
     default-extensions: TypeFamilies, OverloadedRecordDot, TypeApplications, DataKinds
     ghc-options: -O2
 

@@ -1,89 +1,91 @@
+{-# LANGUAGE LambdaCase #-}
 module Day15 where
 
-import Data.Char (digitToInt)
+import Data.Char (digitToInt, intToDigit)
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Maybe (mapMaybe)
+import Data.PQueue.Prio.Min (MinPQueue)
 import Data.Set (Set)
 import qualified Data.Set as Set
+import qualified Data.PQueue.Prio.Min as Q
 import Debug.Trace
 import MyLib (drawGraph, drawMap, sqrtCeiling)
+import Data.Bifunctor (bimap)
 
 type Index = (Int, Int)
 
 type Risk = Int
 
-type Weight = Int
-
-type Candidate = (Risk, Index, Set Index)
-
-type Candidate' = (Weight, Risk, Index, Set Index)
+type Hue = Int
 
 type Chitons = Map Index Int
 
-type Queue = Set Candidate
+type Queue = MinPQueue Risk Index
+type Queue' = MinPQueue Hue (Index, Risk)
 
-type Queue' = Set Candidate'
-
-type Cache = Set (Index, Set Index)
+type Cache = Set Index
 
 adjacent = [(0, 1), (0, -1), (1, 0), (-1, 0)]
 
 dijkstra :: Chitons -> Index -> Queue -> Cache -> Int
 dijkstra chitons end q cache
-  -- \| trace (show (length q)) False = undefined
   | start == end = nextRisk
-  | (start, path) `Set.member` cache = dijkstra chitons end q' cache
+  | start `Set.member` cache = dijkstra chitons end q' cache
   | otherwise = dijkstra chitons end q'' cache'
   where
-    (current@(risk, start, path), q') = Set.deleteFindMin q
+    ((risk, start), q') = Q.deleteFindMin q
     nextRisk = risk + chitons Map.! start
     nexts =
-      Set.fromList $
+      Q.fromList $
         mapMaybe
           ( \(x, y) ->
               let next = (fst start + x, snd start + y)
-               in if Map.member next chitons && Set.notMember next path
-                    then Just (nextRisk, next, Set.insert next path)
+               in if Map.member next chitons && Set.notMember next cache
+                    then Just (nextRisk, next)
                     else Nothing
           )
           adjacent
-    q'' = Set.union nexts q'
-    cache' = Set.insert (start, path) cache
+    q'' = Q.union nexts q'
+    cache' = Set.insert start cache
 
 -- aStar :: Chitons -> Index -> Queue' -> Cache -> Int
 -- aStar chitons end q cache
---   | trace (show (length q, start)) False = undefined
 --   | start == end = nextRisk
---   | (start, path) `Map.member` cache = aStar chitons end q' cache
+--   | start `Set.member` cache = aStar chitons end q' cache
 --   | otherwise = aStar chitons end q'' cache'
 --   where
---     (current@(weight, risk, start, path), q') = Set.deleteFindMin q
+--     ((hue, (start, risk)), q') = Q.deleteFindMin q
 --     nextRisk = risk + chitons Map.! start
---     nextWeight = nextRisk + (2 * sqrtCeiling (abs (fst end - fst start) ^ 2 + abs (snd end - snd start) ^ 2))
+--     nextHue = nextRisk + sqrtCeiling ((fst end - fst start) ^ 2 + (snd end - snd start) ^ 2)
 --     nexts =
---       Set.fromList $
+--       Q.fromList $
 --         mapMaybe
 --           ( \(x, y) ->
 --               let next = (fst start + x, snd start + y)
---                in if Map.member next chitons && Set.notMember next path
---                     then Just (nextWeight, nextRisk, next, Set.insert next path)
+--                in if Map.member next chitons && Set.notMember next cache
+--                     then Just (nextHue, (next, nextRisk))
 --                     else Nothing
 --           )
 --           adjacent
---     q'' = Set.union nexts q'
---     cache' = Map.insertWith min (start, path) risk cache
+--     q'' = Q.union nexts q'
+--     cache' = Set.insert start cache
 
 day15 :: IO ()
 day15 = do
-  input <- drawMap (Just . digitToInt) . lines <$> readFile "input/input15.txt"
-  -- input <- drawMap (Just . digitToInt) . lines <$> readFile "input/test15.txt"
-  let keys = Map.keys input
+  smallMap <- drawMap (Just . digitToInt) . lines <$> readFile "input/input15.txt"
+  -- smallMap <- drawMap (Just . digitToInt) . lines <$> readFile "input/test15.txt"
+  let keys = Map.keys smallMap
       start = minimum keys
       end = maximum keys
-      initRisk = negate (input Map.! start)
-      initWeight = initRisk + abs (fst end - fst start) + abs (snd end - snd start)
-  print end
-  -- print $ dijkstra input end (Set.singleton (negate (input Map.! start), start, Set.empty)) Set.empty
-
--- print $ aStar input end (Set.singleton (initWeight, initRisk, start, Set.empty)) Map.empty
+      width = fst end - fst start + 1
+      height = snd end - snd start + 1
+      bigMap = Map.unions . Set.map (\(x, y) -> let added = 10 - x - y in
+        Map.mapKeys (bimap (+ (x * width)) (+ (y * height))) $ Map.map ((+ 1) . (`mod` 9) . subtract added) smallMap) $ Set.fromList [(x, y) | x <- [0..4], y <- [0..4]]
+      keys' = Map.keys bigMap
+      start' = minimum keys'
+      end' = maximum keys'
+      initRisk' = negate (bigMap Map.! start')
+      initHue' = initRisk' + ((fst end' - fst start') + (snd end' - snd start'))
+  putStrLn $ ("day15a: " ++) $ show $ dijkstra smallMap end (Q.singleton (negate (smallMap Map.! start)) start) Set.empty
+  putStrLn $ ("day15a: " ++) $ show $ dijkstra bigMap end' (Q.singleton (negate (bigMap Map.! start')) start') Set.empty
