@@ -35,4 +35,5 @@ day13 = do
   input <- readFile "input/input13.txt"
   let folded = uncurry (scanl' foldPaper) (parseInput input)
   putStrLn $ ("day13b: " ++) $ show $ length $ folded !! 1
-  putStrLn $ ("day13b: \n" ++) $ unlines $ drawGraph (\case Nothing -> ' '; Just _ -> '#') $ Map.fromSet (const ()) $ last folded
+  putStrLn "day13b:"
+  mapM_ putStrLn $ drawGraph (\case Nothing -> ' '; Just _ -> '#') $ Map.fromSet (const ()) $ last folded
