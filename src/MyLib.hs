@@ -9,7 +9,7 @@ module MyLib where
 
 import Control.Monad (guard, mplus)
 import Data.Bits (xor)
-import Data.Char (digitToInt, intToDigit, ord)
+import Data.Char (digitToInt, intToDigit, ord, isHexDigit)
 import Data.Foldable (Foldable (foldr'), toList)
 import Data.List (delete, foldl', group, nub, tails)
 import Data.List.Split (chunksOf)
@@ -116,6 +116,12 @@ knotHash s =
       k = run list initSeq
    in process k.list
 
+baseNToInteger :: Integer -> String -> Integer
+baseNToInteger n = foldl' (\acc x -> (n * acc) + fromIntegral (digitToInt x)) 0
+
+baseNToInt :: Int -> String -> Int
+baseNToInt n = fromIntegral . baseNToInteger (fromIntegral n)
+
 intToBits :: Int -> String
 intToBits x
   | x == 0 = "0"
@@ -125,8 +131,10 @@ intToBits x
     f 0 = id
     f x = f (x `div` 2) . (intToDigit (x `mod` 2) :)
 
-hexTo4Bits :: Char -> String
-hexTo4Bits l = let l' = intToBits $ digitToInt l in replicate (4 - length l') '0' ++ l'
+hexTo4Bits :: Char -> Maybe String
+hexTo4Bits l
+  | isHexDigit l = let l' = intToBits $ digitToInt l in Just $ replicate (4 - length l') '0' ++ l'
+  | otherwise = Nothing
 
 (!?) :: [a] -> Int -> Maybe a
 l !? i = if i < 0 || i >= length l then Nothing else Just (l !! i)
