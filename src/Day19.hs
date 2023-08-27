@@ -5,7 +5,11 @@ import Data.List (intersect, nub, transpose)
 import Data.List.Split (splitOn)
 import Data.Maybe (listToMaybe)
 import Data.Char (isDigit)
+import Data.Set (Set)
+import qualified Data.Set as Set
 import Control.Monad (guard)
+import Debug.Trace (trace)
+import Data.Either (partitionEithers)
 
 type Index = (Int, Int, Int)
 
@@ -31,19 +35,29 @@ parseInput s = (n, i)
     n = read $ filter isDigit $ head s'
     i = map ((\(x : y : z : _) -> (x, y, z)) . map read . splitOn ",") $ tail s'
 
-overlap :: [Index] -> [Index] -> [[Index]]
-overlap ref x = do
-  picked <- x
+overlap :: [Index] -> [Index] -> Either [Index] [Index]
+overlap ref x = maybe (Left x) Right $ listToMaybe $ do
   r <- ref
+  oriented <- traverse orientations x
+  picked <- oriented
   let diff = picked `sub` r
-  oriented <- transpose $ map orientations x
   let moved = map (`sub` diff) oriented
+  -- return (ref `intersect` moved)
   guard $ length (ref `intersect` moved) >= 12 
   return moved
 
+day19a :: [[Index]] -> [[Index]] -> Set Index -> Set Index
+day19a x y acc | trace (show (length x, length y, length acc)) False = undefined
+day19a [] (y : ys) acc = day19a [y] ys acc
+day19a xs [] acc = acc <> Set.fromList (concat xs)
+day19a (x : xs) ys acc = day19a (xs <> ysRight) ysLeft (acc <> Set.fromList x)
+  where
+    (ysLeft, ysRight) = partitionEithers (map (overlap x) ys)
+
 day19 :: IO ()
 day19 = do
-  input <- map parseInput . splitOn "\n\n" <$> readFile "input/test19.txt"
+  input <- map parseInput . splitOn "\n\n" <$> readFile "input/input19.txt"
+  -- input <- map parseInput . splitOn "\n\n" <$> readFile "input/test19.txt"
   let input' = map snd input
-  -- print $ map (overlap (head input')) (tail input')
-  print input'
+  print $ traverse orientations [(1, 2, 3), (4, 5, 6)]
+  -- print $ length $ day19a [] input' Set.empty
