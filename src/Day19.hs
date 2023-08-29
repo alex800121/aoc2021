@@ -29,29 +29,38 @@ orientations s =
 sub :: Index -> Index -> Index
 sub (a, b, c) (d, e, f) = (a - d, b - e, c - f)
 
-parseInput :: String -> (Int, Set Index)
-parseInput s = (n, Set.fromList i)
+distances :: Set Index -> Set Int
+distances d = Set.fromList $ do
+  let d' = Set.toList d
+  x <- d'
+  y <- d'
+  guard $ x > y
+  let (i, j, k) = sub x y
+  return $ i ^ 2 + j ^ 2 + k ^ 2
+
+parseInput :: String -> Set Index
+parseInput s = Set.fromList i
   where
     s' = lines s
-    n = read $ filter isDigit $ head s'
     i = map ((\(x : y : z : _) -> (x, y, z)) . map read . splitOn ",") $ tail s'
 
-overlap :: Set Index -> Set Index -> Either (Set Index) (Index, Set Index)
-overlap ref x = maybe (Left x) Right $ listToMaybe $ do
+overlap :: (Set Index, Set Int) -> (Set Index, Set Int) -> Either (Set Index, Set Int) (Index, (Set Index, Set Int))
+overlap (ref, rfp) (x, xfp) | length (Set.intersection rfp xfp) < 66 = Left (x, xfp)
+overlap (ref, rfp) (x, xfp) = maybe (Left (x, xfp)) Right $ listToMaybe $ do
   r <- Set.toList ref
   oriented <- orientations x
   picked <- Set.toList oriented
   let diff = picked `sub` r
   let moved = Set.map (`sub` diff) oriented
-  -- return (ref `intersect` moved)
   guard $ length (Set.intersection ref moved) >= 12
-  return ((0, 0, 0) `sub` diff, moved)
+  -- return (ref `intersect` moved)
+  return ((0, 0, 0) `sub` diff, (moved, xfp))
 
-day19a :: [(Index, Set Index)] -> [Set Index] -> ([Index], Set Index) -> ([Index], Set Index)
+day19a :: [(Index, (Set Index, Set Int))] -> [(Set Index, Set Int)] -> ([Index], Set Index) -> ([Index], Set Index)
 -- day19a x y acc | trace (show (length x, length y, length $ snd acc)) False = undefined
 day19a [] (y : ys) acc = day19a [((0, 0, 0), y)] ys acc
-day19a xs [] acc = bimap (map fst xs <>) (Set.unions (map snd xs) <>) acc
-day19a (x : xs) ys acc = day19a (xs <> ysRight) ysLeft (bimap (insert (fst x)) (snd x <>) acc)
+day19a xs [] acc = bimap (map fst xs <>) (Set.unions (map (fst . snd) xs) <>) acc
+day19a (x : xs) ys acc = day19a (xs <> ysRight) ysLeft (bimap (insert (fst x)) (fst (snd x) <>) acc)
   where
     (ysLeft, ysRight) = partitionEithers (map (overlap (snd x)) ys)
 
@@ -65,7 +74,7 @@ day19 :: IO ()
 day19 = do
   input <- map parseInput . splitOn "\n\n" <$> readFile "input/input19.txt"
   -- input <- map parseInput . splitOn "\n\n" <$> readFile "input/test19.txt"
-  let input' = map snd input
+  let input' = zip input (map distances input)
       ans = day19a [] input' ([], Set.empty)
   putStrLn $ ("day19a: " ++) $ show $ length $ snd ans
   putStrLn $ ("day19b: " ++) $ show $ day19b $ fst ans
