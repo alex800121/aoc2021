@@ -17,9 +17,9 @@ type Index = (Int, Int, Int)
 rotate :: Index -> Index
 rotate (x, y, z) = (y, z, x)
 
-orientations :: Set Index -> [(Set Index, Index -> Index)]
+orientations :: Set Index -> [Set Index]
 orientations s =
-  [ (Set.map (g n . f3 . f2) s, g n . f3 . f2)
+  [ Set.map (g n . f3 . f2) s
     | n <- [0 .. 3],
       let g n x = iterate (\(a, b, c) -> (a, c, -b)) x !! n,
       f2 <- [id, rotate, rotate . rotate],
@@ -39,12 +39,12 @@ parseInput s = (n, Set.fromList i)
 overlap :: Set Index -> Set Index -> Either (Set Index) (Index, Set Index)
 overlap ref x = maybe (Left x) Right $ listToMaybe $ do
   r <- Set.toList ref
-  (oriented, transformer) <- orientations x
+  oriented <- orientations x
   picked <- Set.toList oriented
   let diff = picked `sub` r
   let moved = Set.map (`sub` diff) oriented
   -- return (ref `intersect` moved)
-  guard $ length (Set.intersection ref moved) >= 12 
+  guard $ length (Set.intersection ref moved) >= 12
   return ((0, 0, 0) `sub` diff, moved)
 
 day19a :: [(Index, Set Index)] -> [Set Index] -> ([Index], Set Index) -> ([Index], Set Index)
