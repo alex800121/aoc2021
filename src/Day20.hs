@@ -3,7 +3,7 @@
 module Day20 where
 
 import Control.Monad.Trans.State.Strict
-import Data.Array.IArray (Array, listArray, (!))
+import Data.Array.IArray (Array, elems, listArray, array, (!), IArray (bounds))
 import Data.List.Split (splitOn)
 import Data.Map (Map)
 import qualified Data.Map as Map
@@ -26,8 +26,16 @@ type Mem = Map (Gen, Index) Bool
 
 type Trench = (Bool, Array Index Bool)
 
-nextTrench :: Trench -> Trench
-nextTrench (def, trench) = undefined
+nextTrench :: Rule -> Trench -> Trench
+nextTrench rule (def, trench) = (not def, trench')
+  where
+    ((minX, minY), (maxX, maxY)) = bounds trench
+    newBound@((minX', minY'), (maxX', maxY')) = ((minX - 1, minY - 1), (maxX + 1, maxY + 1))
+    f x y
+      | x < minX || x > maxX || y < minY || y > maxY = def
+      | otherwise = trench ! (x, y)
+    g x y = rule ! foldl' (\acc z -> (acc * 2) + if z then 1 else 0) 0 (map (uncurry f . bimap (+ x) (+ y)) box)
+    trench' = array newBound [((x, y), g x y) | x <- [minX' .. maxX'], y <- [minY' .. maxY']]
 
 box :: [Index]
 box = [(x, y) | y <- [-1 .. 1], x <- [-1 .. 1]]
@@ -46,16 +54,25 @@ getGenIndex bound rule (gen, index) =
       modify (Map.insert (gen, index) ans)
       return ans
 
+printArray :: (a -> b) -> Array Index a -> [[b]]
+printArray f arr = g minX minY id
+  where
+    ((minX, minY), (maxX, maxY)) = bounds arr
+    g x y acc
+      | y > maxY = []
+      | x > maxX = acc [] : g minX (y + 1) id
+      | otherwise = g (x + 1) y (acc . (f (arr ! (x, y)) :))
+
 day20 :: IO ()
 day20 = do
   input <- splitOn "\n\n" <$> readFile "input/input20.txt"
-  -- input <- splitOn "\n\n" <$> readFile "input/test20.txt"
-  let rule = listArray (0, 511) $ map (== '#') $ filter (not . isSpace) $ head input
+  let rule = listArray (0, 511) $ map (== '#') $ filter (not . isSpace) $ head input :: Array Int Bool
       mem = Map.mapKeys (0,) $ drawMap (Just . (== '#')) $ lines (input !! 1)
       (minX, minY) = minimum $ map snd $ Map.keys mem
       (maxX, maxY) = maximum $ map snd $ Map.keys mem
+      arr = array ((minX, minY), (maxX, maxY)) $ Map.toList $ Map.mapKeys snd mem :: Array Index Bool
       rangeN n = [(n, (x, y)) | x <- [minX - n .. maxX + n], y <- [minY - n .. maxY + n]]
       rangeA = rangeN 2
       rangeB = rangeN 50
-  putStrLn $ ("day20a: " ++) $ show $ length $ filter id $ (`evalState` mem) $ traverse (getGenIndex ((minX, maxX), (minY, maxY)) rule) rangeA
-  putStrLn $ ("day20b: " ++) $ show $ length $ filter id $ (`evalState` mem) $ traverse (getGenIndex ((minX, maxX), (minY, maxY)) rule) rangeB
+  putStrLn $ ("day20a: " ++) $ show $ length $ filter id $ elems $ snd $ (!! 2) $ iterate (nextTrench rule) (False, arr)
+  putStrLn $ ("day20b: " ++) $ show $ length $ filter id $ elems $ snd $ (!! 50) $ iterate (nextTrench rule) (False, arr)
