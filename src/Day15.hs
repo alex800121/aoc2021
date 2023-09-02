@@ -5,9 +5,9 @@ import Data.Char (digitToInt, intToDigit)
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Maybe (mapMaybe)
-import Data.PQueue.Prio.Min (MinPQueue)
 import Data.Set (Set)
 import qualified Data.Set as Set
+import Data.PQueue.Prio.Min (MinPQueue)
 import qualified Data.PQueue.Prio.Min as Q
 import Debug.Trace
 import MyLib (drawGraph, drawMap, sqrtCeiling)

@@ -278,7 +278,7 @@ overlapEucVec (Cons (a, b) xs) (Cons (c, d) ys)
   | otherwise = Nothing
   where
     maxOfSmall = max a c
-    minOfBig = max b d
+    minOfBig = min b d
 
 subtractEucVec :: (Ord a) => Vec n (a, a) -> Vec n (a, a) -> [Vec n (a, a)]
 subtractEucVec Nil Nil = []
