@@ -150,6 +150,17 @@ drawMap convert l = f 0 0
           Nothing -> f (x + 1) y
           Just b -> Map.insert (x, y) b (f (x + 1) y)
 
+drawMapWithKey :: ((Int, Int) -> a -> Maybe b) -> [[a]] -> Map (Int, Int) b
+drawMapWithKey convert l = f 0 0
+  where
+    f x y = case l !? y of
+      Nothing -> Map.empty
+      Just y' -> case y' !? x of
+        Nothing -> f 0 (y + 1)
+        Just a -> case convert (x, y) a of
+          Nothing -> f (x + 1) y
+          Just b -> Map.insert (x, y) b (f (x + 1) y)
+
 drawGraph :: (Maybe a -> b) -> Map (Int, Int) a -> [[b]]
 drawGraph convert m = f minY
   where
