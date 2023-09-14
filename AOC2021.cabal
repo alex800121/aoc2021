@@ -36,7 +36,7 @@ common shared
         base16-bytestring,
         multiset,
         pqueue,
-        search-algorithms
+        sbv
     default-extensions: TypeFamilies, OverloadedRecordDot, TypeApplications, DataKinds
     ghc-options: -O2
 
