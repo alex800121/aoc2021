@@ -30,16 +30,13 @@ common shared
         transformers,
         containers,
         vector,
-        fused-effects,
         split,
         array,
         bytestring,
-        cryptohash-md5,
-        pureMD5,
         base16-bytestring,
-        freer-simple,
         multiset,
-        pqueue
+        pqueue,
+        search-algorithms
     default-extensions: TypeFamilies, OverloadedRecordDot, TypeApplications, DataKinds
     ghc-options: -O2
 
