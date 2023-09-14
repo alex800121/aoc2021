@@ -37,6 +37,82 @@ finished =
     )
     . Map.elems
 
+dijkstra :: Set (Map Index Space) -> MinPQueue Risk (Map Index Space) -> Maybe Risk
+dijkstra acc q = case Q.minViewWithKey q of
+  Nothing -> Nothing
+  Just ((r, a), q') | a `Set.member` acc -> dijkstra acc q'
+  Just ((r, a), q') ->
+    if finished a
+      then Just r
+      else
+        let q'' = Q.union q' $ Q.unions $ map (candidates (r, a)) $ Map.keys a
+            acc' = Set.insert a acc
+         in dijkstra acc' q''
+
+candidates :: (Risk, Map Index Space) -> Index -> MinPQueue Risk (Map Index Space)
+candidates (r, m) i = case m Map.!? i of
+  Just (Corridor (Just p)) ->
+    Q.map
+      ( \k ->
+          let a = m Map.! k
+              a' = a {getPod = Just p}
+           in Map.insert i (Corridor Nothing) $ Map.insert k a' m
+      )
+      $ Q.filter (isDest p)
+      $ flooded (risk p)
+  Just (Dest p (Just p'))
+    | any cond [fmap (+ f) i | f <- [-3 .. 3]] ->
+        Q.map
+          ( \k ->
+              let a = m Map.! k
+                  a' = a {getPod = Just p'}
+               in Map.insert i (Dest p Nothing) $ Map.insert k a' m
+          )
+          $ Q.filter (\k -> isDest p k || isCorr k)
+          $ flooded (risk p')
+  _ -> Q.empty
+  where
+    risk x = case x of
+      A -> 1
+      B -> 10
+      C -> 100
+      D -> 1000
+    cond b = case m Map.!? b of
+      Just (Dest c (Just c')) -> c /= c'
+      _ -> False
+    flooded j = flood j Set.empty (Q.singleton r i) Q.empty
+    isDest x j = case m Map.!? j of
+      Just (Dest y Nothing) | x == y -> isDest' x (fmap (+ 1) j)
+      _ -> False
+    isDest' x j = case m Map.!? j of
+      Nothing -> True
+      Just (Dest y (Just z)) | x == y && x == z -> isDest' x (fmap (+ 1) j)
+      _ -> False
+    isCorr j = case m Map.!? j of
+      Just (Corridor Nothing) -> True
+      _ -> False
+    flood :: Risk -> Set Index -> MinPQueue Int Index -> MinPQueue Int Index -> MinPQueue Int Index
+    flood risk visited start acc
+      | Q.null start = acc
+      | otherwise = flood risk visited' start' acc'
+      where
+        -- f k =
+        --   k `Set.notMember` visited && case m Map.!? k of
+        --     Just x | isNothing (getPod x) -> True
+        --     _ -> False
+        start' =
+          Q.filter
+            ( \k ->
+                k `Set.notMember` visited' && case m Map.!? k of
+                  Just x | isNothing (getPod x) -> True
+                  _ -> False
+            )
+            $ Q.unions
+            $ map (\(x, y) -> Q.mapKeys (+ risk) $ Q.map (bimap (+ x) (+ y)) start) adjacent
+        acc' = Q.union start acc
+        visited' = foldr Set.insert visited $ Q.elems start
+
+{-
 calcAddHeu :: Map Index Space -> Int
 calcAddHeu =
   sum
@@ -48,22 +124,7 @@ calcAddHeu =
       )
     . Map.elems
 
-dijkstra :: Set (Map Index Space) -> MinPQueue Risk (Map Index Space) -> Maybe Risk
--- dijkstra acc q | traceShow (Q.size q) False = undefined
-dijkstra acc q = case Q.minViewWithKey q of
-  Nothing -> Nothing
-  Just ((r, a), q') | a `Set.member` acc -> dijkstra acc q'
-  Just ((r, a), q') ->
-    -- if calcAddHeu a == 0
-    if finished a
-      then Just r
-      else
-        let q'' = Q.union q' $ Q.unions $ map (candidates (r, a)) $ Map.keys a
-            acc' = Set.insert a acc
-         in dijkstra acc' q''
-
 aStar :: Set (Map Index Space) -> MinPQueue Heu (Risk, Map Index Space) -> Maybe Risk
--- aStar acc q | traceShow (Q.size q) False = undefined
 aStar acc q = case Q.minViewWithKey q of
   Nothing -> Nothing
   Just ((h, (r, a)), q') | a `Set.member` acc -> aStar acc q'
@@ -74,8 +135,6 @@ aStar acc q = case Q.minViewWithKey q of
         let q'' = Q.union q' $ Q.unions $ map (candidates' (r, a)) $ Map.keys a
             acc' = Set.insert a acc
          in aStar acc' q''
-
--- in trace (draw a) $ aStar acc' q''
 
 candidates' :: (Risk, Map Index Space) -> Index -> MinPQueue Heu (Risk, Map Index Space)
 candidates' (r, m) i = case m Map.!? i of
@@ -140,69 +199,13 @@ candidates' (r, m) i = case m Map.!? i of
             $ Set.fold Map.union Map.empty
             $ Set.map (\(x, y) -> Map.map (+ risk) $ Map.mapKeys (bimap (+ x) (+ y)) start) adjacent
         acc' = Map.union start acc
+-}
 
-candidates :: (Risk, Map Index Space) -> Index -> MinPQueue Risk (Map Index Space)
-candidates (r, m) i = case m Map.!? i of
-  Just (Corridor (Just p)) ->
-    Q.map
-      ( \k ->
-          let a = m Map.! k
-              a' = a {getPod = Just p}
-           in Map.insert i (Corridor Nothing) $ Map.insert k a' m
-      )
-      $ Q.filter (isDest p)
-      $ flooded p
-  Just (Dest p (Just p'))
-    -- \| condUp (fmap (subtract 1) i) && condDown i ->
-    | any cond [fmap (+ f) i | f <- [-3 .. 3]] ->
-        Q.map
-          ( \k ->
-              let a = m Map.! k
-                  a' = a {getPod = Just p'}
-               in Map.insert i (Dest p Nothing) $ Map.insert k a' m
-          )
-          $ Q.filter (\k -> isDest p k || isCorr k)
-          $ flooded p'
-  _ -> Q.empty
-  where
-    cond b = case m Map.!? b of
-      Just (Dest c (Just c')) -> c /= c'
-      _ -> False
-    flooded j = flood j Set.empty (Q.singleton r i) Q.empty
-    isDest x j = case m Map.!? j of
-      Just (Dest y Nothing) | x == y -> isDest' x (fmap (+ 1) j)
-      _ -> False
-    isDest' x j = case m Map.!? j of
-      Nothing -> True
-      Just (Dest y (Just z)) | x == y && x == z -> isDest' x (fmap (+ 1) j)
-      _ -> False
-    isCorr j = case m Map.!? j of
-      Just (Corridor Nothing) -> True
-      _ -> False
-    flood :: Pods -> Set Index -> MinPQueue Int Index -> MinPQueue Int Index -> MinPQueue Int Index
-    flood y visited start acc
-      | Q.null start = acc
-      | otherwise = flood y visited' start' acc'
-      where
-        risk = case y of
-          A -> 1
-          B -> 10
-          C -> 100
-          D -> 1000
-        start' =
-          Q.filter
-            ( \k ->
-                k `Set.notMember` visited && case m Map.!? k of
-                  Just x | isNothing (getPod x) -> True
-                  _ -> False
-            )
-            $ Set.fold Q.union Q.empty
-            $ Set.map (\(x, y) -> Q.mapKeys (+ risk) $ Q.map (bimap (+ x) (+ y)) start) adjacent
-        acc' = Q.union start acc
-        visited' = foldr Set.insert visited $ Q.elems start
+-- adjacent :: Set Index
+-- adjacent = Set.fromList [(0, 1), (0, -1), (1, 0), (-1, 0)]
 
-adjacent :: Set Index
-adjacent = Set.fromList [(0, 1), (0, -1), (1, 0), (-1, 0)]
+adjacent :: [Index]
+adjacent = [(0, 1), (0, -1), (1, 0), (-1, 0)]
 
 draw :: Map Index Space -> String
 draw =
@@ -253,7 +256,8 @@ day23 = do
       <$> readFile "input/input23'.txt"
   -- mapM_ (\x -> print (fst x) >> putStrLn (draw (snd x))) $ concatMap (Q.toList . candidates (0, input)) $ Map.keys input
   -- putStrLn $ draw input
-  -- putStrLn $ ("day23a: " ++) $ show $ dijkstra Set.empty (Q.singleton 0 input)
-  -- putStrLn $ ("day23b: " ++) $ show $ dijkstra Set.empty (Q.singleton 0 input')
-  putStrLn $ ("day23b: " ++) $ show $ aStar Set.empty (Q.singleton (calcAddHeu input') (0, input'))
-  -- putStrLn $ ("day23a: " ++) $ show $ aStar Set.empty (Q.singleton (calcAddHeu input) (0, input))
+  putStrLn $ ("day23a: " ++) $ show $ dijkstra Set.empty (Q.singleton 0 input)
+  putStrLn $ ("day23b: " ++) $ show $ dijkstra Set.empty (Q.singleton 0 input')
+
+-- putStrLn $ ("day23a: " ++) $ show $ aStar Set.empty (Q.singleton (calcAddHeu input) (0, input))
+-- putStrLn $ ("day23b: " ++) $ show $ aStar Set.empty (Q.singleton (calcAddHeu input') (0, input'))
