@@ -2,13 +2,14 @@
 
 module Day24 where
 
-import Control.Applicative ((<|>))
+import Control.Applicative (Alternative (empty), (<|>))
+import Control.Monad (guard)
+import Data.List (foldl')
 import Data.Maybe (mapMaybe)
-import Data.SBV
+import Data.SBV hiding (Interval)
 import MyLib (Parser, signedInteger)
 import Text.Megaparsec (choice, eof, parseMaybe, single)
 import Text.Megaparsec.Char (space, string)
-import Data.List (foldl')
 
 data Instruction a b
   = Inp a
@@ -19,9 +20,11 @@ data Instruction a b
   | Eql a b
   deriving (Show, Eq, Ord, Functor)
 
+data Interval a = Interval {lower :: a, upper :: a} deriving (Show, Eq, Ord)
+
 type Ins = [Instruction Reg (Either Reg Int)]
 
-data Vars a = R {_w :: !a, _x :: !a, _y :: !a, _z :: !a} deriving (Show, Eq, Ord, Functor)
+data Vars a = R {_w :: a, _x :: a, _y :: a, _z :: a} deriving (Show, Eq, Ord, Functor)
 
 data Reg = W | X | Y | Z deriving (Show, Eq, Ord)
 
@@ -62,6 +65,48 @@ readFromReg r = case r of
   Y -> _y
   Z -> _z
 
+calcInt :: Vars (Interval Int) -> Ins -> Bool
+calcInt v ins = case ins of
+  [] -> let z = _z v in 0 <= upper z && 0 >= lower z
+  Inp r : ins' -> calcInt (writeToReg r (Interval 1 9) v) ins
+  Add a b : ins' ->
+    let a' = readFromReg a v
+        b' = f b v
+     in calcInt (writeToReg a (Interval (lower a' + lower b') (upper a' + upper b')) v) ins'
+  Mul a b : ins' ->
+    let a' = readFromReg a v
+        Interval b1 b2 = f b v
+     in undefined
+  where
+    f b v = case b of
+      Left r -> readFromReg r v
+      Right i -> Interval i i
+
+readIns' :: [Int] -> Vars Int -> Ins -> [[Int]]
+readIns' inputs v ins = case ins of
+  [] | _z v == 0 -> pure []
+  [] -> empty
+  Inp r : ins' -> do
+    i <- inputs
+    (i :) <$> readIns' inputs (writeToReg r i v) ins'
+  Add a b : ins' -> readIns' inputs (writeToReg a (readFromReg a v + f b v) v) ins'
+  Mul a b : ins' -> readIns' inputs (writeToReg a (readFromReg a v * f b v) v) ins'
+  Eql a b : ins' -> readIns' inputs (writeToReg a (if readFromReg a v == f b v then 1 else 0) v) ins'
+  Div a b : ins' -> do
+    let b' = f b v
+    guard $ b' /= 0
+    let a' = readFromReg a v
+    readIns' inputs (writeToReg a (a' `div` b') v) ins'
+  Mod a b : ins' -> do
+    let b' = f b v
+        a' = readFromReg a v
+    guard $ a' >= 0 && b' > 0
+    readIns' inputs (writeToReg a (a' `mod` b') v) ins'
+  where
+    f b v = case b of
+      Left r -> readFromReg r v
+      Right i -> fromIntegral i
+
 readIns :: Input -> Ins -> Vars SInt64
 readIns = go (R 0 0 0 0)
   where
@@ -82,12 +127,24 @@ toNum = foldl' (\acc -> (+ acc * 10)) 0
 valid :: Input -> Ins -> SBool
 valid v i = sAll (\x -> x .<= 9 .&& x .>= 1) v .&& (0 .== _z (readIns v i))
 
-sol i = optimize Lexicographic $ do
+sola :: (String -> SInt64 -> Symbolic ()) -> Ins -> IO OptimizeResult
+sola f i = optimize Lexicographic $ do
   v <- mkFreeVars 14
   constrain $ valid v i
-  maximize "value" $ toNum v
+  f "value" $ toNum v
+
+solb :: (String -> SInt64 -> Symbolic ()) -> Ins -> IO OptimizeResult
+solb f i = optimize Lexicographic $ do
+  v <- mkFreeVars 14
+  constrain $ valid v i
+  f "value" $ toNum v
 
 day24 :: IO ()
 day24 = do
   input <- mapMaybe (parseMaybe inputParser) . lines <$> readFile "input/input24.txt"
-  print =<< sol input
+  print $ head $ readIns' [9, 8 .. 1] (R 0 0 0 0) input
+
+-- x <- sola maximize input
+-- y <- solb minimize input
+-- putStrLn . ("day24a: \n" ++) $ show x
+-- putStrLn . ("day24a: \n" ++) $ show y
