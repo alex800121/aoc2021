@@ -13,20 +13,18 @@ import Text.Megaparsec.Char (space, string)
 
 data Instruction a b
   = Inp a
-  | Add a b
-  | Mul a b
-  | Div a b
-  | Mod a b
-  | Eql a b
+  | Op Op a b
   deriving (Show, Eq, Ord, Functor)
 
-data Interval a = Interval {lower :: a, upper :: a} deriving (Show, Eq, Ord)
+data Interval a = Interval {lower :: !a, upper :: !a} deriving (Show, Eq, Ord)
 
 type Ins = [Instruction Reg (Either Reg Int)]
 
-data Vars a = R {_w :: a, _x :: a, _y :: a, _z :: a} deriving (Show, Eq, Ord, Functor)
+data Vars a = R {_w :: !a, _x :: !a, _y :: !a, _z :: !a} deriving (Show, Eq, Ord, Functor)
 
 data Reg = W | X | Y | Z deriving (Show, Eq, Ord)
+
+data Op = Add | Mul | Div | Mod | Eql deriving (Show, Eq, Ord)
 
 type Input = [SInt64]
 
@@ -34,11 +32,11 @@ inputParser :: Parser (Instruction Reg (Either Reg Int))
 inputParser =
   choice
     [ string "inp " >> (Inp <$> reg),
-      string "add " >> (Add <$> reg <*> intOrReg),
-      string "mul " >> (Mul <$> reg <*> intOrReg),
-      string "div " >> (Div <$> reg <*> intOrReg),
-      string "mod " >> (Mod <$> reg <*> intOrReg),
-      string "eql " >> (Eql <$> reg <*> intOrReg)
+      string "add " >> (Op Add <$> reg <*> intOrReg),
+      string "mul " >> (Op Mul <$> reg <*> intOrReg),
+      string "div " >> (Op Div <$> reg <*> intOrReg),
+      string "mod " >> (Op Mod <$> reg <*> intOrReg),
+      string "eql " >> (Op Eql <$> reg <*> intOrReg)
     ]
   where
     reg =
@@ -68,19 +66,38 @@ readFromReg r = case r of
 calcInt :: Vars (Interval Int) -> Ins -> Bool
 calcInt v ins = case ins of
   [] -> let z = _z v in 0 <= upper z && 0 >= lower z
-  Inp r : ins' -> calcInt (writeToReg r (Interval 1 9) v) ins
-  Add a b : ins' ->
-    let a' = readFromReg a v
-        b' = f b v
-     in calcInt (writeToReg a (Interval (lower a' + lower b') (upper a' + upper b')) v) ins'
-  Mul a b : ins' ->
-    let a' = readFromReg a v
-        Interval b1 b2 = f b v
-     in undefined
+  Inp r : ins' -> calcInt (writeToReg r (Interval 1 9) v) ins'
+  Op op a b : ins' ->
+    let a'@(Interval lowerA upperA) = readFromReg a v
+        b'@(Interval lowerB upperB) = f b v
+        x = case op of
+          Add -> Just $ Interval (lowerA + lowerB) (upperA + upperB)
+          Mul -> let l = (*) <$> [lowerA, upperA] <*> [lowerB, upperB] in Just $ Interval (minimum l) (maximum l)
+          Eql | lowerA == upperA && lowerA == lowerB && lowerA == upperB -> Just $ Interval 1 1
+          Eql | lowerA > upperB || upperA < lowerB -> Just $ Interval 0 0
+          Eql -> Just $ Interval 0 1
+          Div ->
+            if lowerB > 0 || upperB < 0
+              then let l = div <$> [lowerA, upperA] <*> [lowerB, upperB] in Just $ Interval (minimum l) (maximum l)
+              else Nothing
+          Mod -> if lowerA < 0 && lowerB <= 0 then Nothing else Just $ Interval 0 (upperB - 1)
+     in maybe False (\y -> calcInt (writeToReg a y v) ins') x
+    -- Add a b : ins' ->
+    --   let a' = readFromReg a v
+    --       b' = f b v
+    --    in calcInt (writeToReg a (Interval (lower a' + lower b') (upper a' + upper b')) v) ins'
+    -- Mul a b : ins' | Interval a1 a2 <- readFromReg a v, Interval b1 b2 <- f b v ->
+    --   let l = (*) <$> [a1 .. a2] <*> [b1 .. b2]
+    --    in calcInt (writeToReg a (Interval (minimum l) (maximum l)) v) ins'
   where
     f b v = case b of
       Left r -> readFromReg r v
       Right i -> Interval i i
+
+intervalify :: Vars a -> Vars (Interval a)
+intervalify (R w x y z) = R (f w) (f x) (f y) (f z)
+  where
+    f a = Interval a a
 
 readIns' :: [Int] -> Vars Int -> Ins -> [[Int]]
 readIns' inputs v ins = case ins of
@@ -88,20 +105,21 @@ readIns' inputs v ins = case ins of
   [] -> empty
   Inp r : ins' -> do
     i <- inputs
-    (i :) <$> readIns' inputs (writeToReg r i v) ins'
-  Add a b : ins' -> readIns' inputs (writeToReg a (readFromReg a v + f b v) v) ins'
-  Mul a b : ins' -> readIns' inputs (writeToReg a (readFromReg a v * f b v) v) ins'
-  Eql a b : ins' -> readIns' inputs (writeToReg a (if readFromReg a v == f b v then 1 else 0) v) ins'
-  Div a b : ins' -> do
-    let b' = f b v
-    guard $ b' /= 0
+    let v' = writeToReg r i v
+    if calcInt (intervalify v') ins'
+      then (i :) <$> readIns' inputs v' ins'
+      else empty
+  Op op a b : ins' ->
     let a' = readFromReg a v
-    readIns' inputs (writeToReg a (a' `div` b') v) ins'
-  Mod a b : ins' -> do
-    let b' = f b v
-        a' = readFromReg a v
-    guard $ a' >= 0 && b' > 0
-    readIns' inputs (writeToReg a (a' `mod` b') v) ins'
+        b' = f b v
+        (c, g) = case op of
+          Add -> (True, (+))
+          Mul -> (True, (*))
+          Eql -> (True, \x y -> if x == y then 1 else 0)
+          Div -> (b' /= 0, div)
+          Mod -> (a' >= 0 && b' > 0, mod)
+        v' = writeToReg a (g a' b') v
+     in if c && calcInt (intervalify v') ins' then readIns' inputs v' ins' else empty
   where
     f b v = case b of
       Left r -> readFromReg r v
@@ -112,11 +130,16 @@ readIns = go (R 0 0 0 0)
   where
     go v _ [] = v
     go v (x : xs) (Inp reg : ins) = go (writeToReg reg x v) xs ins
-    go v xs (Add a b : ins) = go (writeToReg a (readFromReg a v + f b v) v) xs ins
-    go v xs (Mul a b : ins) = go (writeToReg a (readFromReg a v * f b v) v) xs ins
-    go v xs (Div a b : ins) = go (writeToReg a (readFromReg a v `sDiv` f b v) v) xs ins
-    go v xs (Mod a b : ins) = go (writeToReg a (readFromReg a v `sMod` f b v) v) xs ins
-    go v xs (Eql a b : ins) = go (writeToReg a (ite (readFromReg a v .== f b v) 1 0) v) xs ins
+    go v xs (Op op a b : ins) =
+      let a' = readFromReg a v
+          b' = f b v
+          g = case op of
+            Add -> (+)
+            Mul -> (*)
+            Div -> sDiv
+            Mod -> sMod
+            Eql -> \x y -> ite (x .== y) 1 0
+       in go (writeToReg a (g a' b') v) xs ins
     f b v = case b of
       Left r -> readFromReg r v
       Right i -> fromIntegral i
@@ -142,9 +165,10 @@ solb f i = optimize Lexicographic $ do
 day24 :: IO ()
 day24 = do
   input <- mapMaybe (parseMaybe inputParser) . lines <$> readFile "input/input24.txt"
-  print $ head $ readIns' [9, 8 .. 1] (R 0 0 0 0) input
-
--- x <- sola maximize input
--- y <- solb minimize input
--- putStrLn . ("day24a: \n" ++) $ show x
--- putStrLn . ("day24a: \n" ++) $ show y
+  -- x <- sola maximize input
+  -- y <- solb minimize input
+  -- putStrLn . ("day24a: \n" ++) $ show x
+  -- putStrLn . ("day24a: \n" ++) $ show y
+  putStrLn $ ("day24a: " ++) $ concatMap show $ head $ readIns' [9, 8 .. 1] (R 0 0 0 0) input
+  putStrLn $ ("day24b: " ++) $ concatMap show $ head $ readIns' [1..9] (R 0 0 0 0) input
+  -- print $ calcInt (intervalify (R 0 0 0 0)) input
