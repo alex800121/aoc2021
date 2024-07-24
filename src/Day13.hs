@@ -2,12 +2,19 @@
 
 module Day13 where
 
+import Paths_AOC2021
 import Data.List (foldl', scanl')
+import Paths_AOC2021
 import Data.List.Split (splitOn)
+import Paths_AOC2021
 import Data.Map (Map)
+import Paths_AOC2021
 import qualified Data.Map as Map
+import Paths_AOC2021
 import Data.Set (Set)
+import Paths_AOC2021
 import qualified Data.Set as Set
+import Paths_AOC2021
 import MyLib (drawGraph, drawMap)
 
 type Index = (Int, Int)

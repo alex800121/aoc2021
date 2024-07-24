@@ -1,14 +1,23 @@
 {-# LANGUAGE TupleSections #-}
 module Day12 where
 
+import Paths_AOC2021
 import Data.List.Split (splitOn)
+import Paths_AOC2021
 import Data.Map (Map)
+import Paths_AOC2021
 import qualified Data.Map as Map
+import Paths_AOC2021
 import Data.MultiSet (MultiSet)
+import Paths_AOC2021
 import qualified Data.MultiSet as MultiSet
+import Paths_AOC2021
 import Data.Set (Set)
+import Paths_AOC2021
 import qualified Data.Set as Set
+import Paths_AOC2021
 import Data.Char (isUpper)
+import Paths_AOC2021
 import Debug.Trace
 
 type Cave = Map String (Set String)

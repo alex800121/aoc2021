@@ -1,9 +1,14 @@
 module Day21 where
 
+import Paths_AOC2021
 import Data.Bifunctor (bimap)
+import Paths_AOC2021
 import Data.List.Split (divvy)
+import Paths_AOC2021
 import Data.MultiSet (MultiSet)
+import Paths_AOC2021
 import qualified Data.MultiSet as MS
+import Paths_AOC2021
 import Debug.Trace
 
 -- player1 = 4

@@ -1,5 +1,6 @@
 module Day1 where
 
+import Paths_AOC2021
 import Data.List.Split (divvy)
 
 countIncrease :: Ord a => [a] -> Int

@@ -2,16 +2,27 @@
 
 module Day23 where
 
+import Paths_AOC2021
 import Data.Bifunctor (bimap)
+import Paths_AOC2021
 import Data.List
+import Paths_AOC2021
 import Data.Map (Map)
+import Paths_AOC2021
 import qualified Data.Map as Map
+import Paths_AOC2021
 import Data.Maybe (isJust, isNothing, mapMaybe)
+import Paths_AOC2021
 import Data.PQueue.Prio.Min (MinPQueue)
+import Paths_AOC2021
 import qualified Data.PQueue.Prio.Min as Q
+import Paths_AOC2021
 import Data.Set (Set)
+import Paths_AOC2021
 import qualified Data.Set as Set
+import Paths_AOC2021
 import Debug.Trace
+import Paths_AOC2021
 import MyLib (drawGraph, drawMapWithKey)
 
 type Index = (Int, Int)

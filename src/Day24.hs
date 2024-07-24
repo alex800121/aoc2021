@@ -1,10 +1,16 @@
 module Day24 where
 
+import Paths_AOC2021
 import Data.Char (intToDigit)
+import Paths_AOC2021
 import Data.List ((\\))
+import Paths_AOC2021
 import Data.List.Split (chunksOf)
+import Paths_AOC2021
 import Data.Maybe (fromJust, mapMaybe)
+import Paths_AOC2021
 import MyLib ((!?))
+import Paths_AOC2021
 import Text.Read (readMaybe)
 
 data Ins = Ins
