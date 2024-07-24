@@ -2,13 +2,21 @@
 
 module Day24 where
 
+import Paths_AOC2021
 import Control.Applicative (Alternative (empty), (<|>))
+import Paths_AOC2021
 import Control.Monad (guard)
+import Paths_AOC2021
 import Data.List (foldl')
+import Paths_AOC2021
 import Data.Maybe (mapMaybe)
+import Paths_AOC2021
 import Data.SBV hiding (Interval)
+import Paths_AOC2021
 import MyLib (Parser, signedInteger)
+import Paths_AOC2021
 import Text.Megaparsec (choice, eof, parseMaybe, single)
+import Paths_AOC2021
 import Text.Megaparsec.Char (space, string)
 
 data Instruction a b

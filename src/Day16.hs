@@ -1,9 +1,14 @@
 module Day16 where
 
+import Paths_AOC2021
 import Data.Char (digitToInt)
+import Paths_AOC2021
 import Data.Maybe (mapMaybe)
+import Paths_AOC2021
 import Data.Tuple (swap)
+import Paths_AOC2021
 import MyLib
+import Paths_AOC2021
 import Data.Bifunctor (Bifunctor(..))
 
 data Packet op payload

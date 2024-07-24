@@ -2,12 +2,19 @@
 
 module Day11 where
 
+import Paths_AOC2021
 import Data.Bifunctor (Bifunctor (bimap))
+import Paths_AOC2021
 import Data.List (findIndex)
+import Paths_AOC2021
 import Data.Char (chr, digitToInt, intToDigit, ord)
+import Paths_AOC2021
 import Data.Map (Map)
+import Paths_AOC2021
 import qualified Data.Map as Map
+import Paths_AOC2021
 import Data.Maybe (mapMaybe)
+import Paths_AOC2021
 import MyLib (drawGraph, drawMap)
 
 type Index = (Int, Int)

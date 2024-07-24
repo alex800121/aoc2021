@@ -1,10 +1,16 @@
 module Day14 where
 
+import Paths_AOC2021
 import Data.List.Split (divvy, splitOn)
+import Paths_AOC2021
 import Data.Map (Map)
+import Paths_AOC2021
 import qualified Data.Map as Map
+import Paths_AOC2021
 import Data.MultiSet (MultiSet)
+import Paths_AOC2021
 import qualified Data.MultiSet as MultiSet
+import Paths_AOC2021
 import Data.Char (isSpace)
 
 type Formula = Map String (MultiSet String)

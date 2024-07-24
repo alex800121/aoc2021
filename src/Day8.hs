@@ -1,11 +1,18 @@
 module Day8 where
 
+import Paths_AOC2021
 import Data.Char (chr, ord)
+import Paths_AOC2021
 import Data.List (elemIndex, find, findIndex, foldl', permutations, sort)
+import Paths_AOC2021
 import Data.List.Split (splitOn)
+import Paths_AOC2021
 import Data.Maybe (catMaybes, fromJust)
+import Paths_AOC2021
 import MyLib (mapFirst)
+import Paths_AOC2021
 import qualified Data.Map as Map
+import Paths_AOC2021
 import Data.Map (Map)
 
 original :: Map [Int] Int

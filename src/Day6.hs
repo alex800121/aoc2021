@@ -1,7 +1,10 @@
 module Day6 where
 
+import Paths_AOC2021
 import qualified Data.IntMap as IntMap
+import Paths_AOC2021
 import Data.List (group, sort)
+import Paths_AOC2021
 import Data.List.Split (splitOn)
 
 type Fish = IntMap.IntMap Int

@@ -1,16 +1,27 @@
 {-# LANGUAGE LambdaCase #-}
 module Day15 where
 
+import Paths_AOC2021
 import Data.Char (digitToInt, intToDigit)
+import Paths_AOC2021
 import Data.Map (Map)
+import Paths_AOC2021
 import qualified Data.Map as Map
+import Paths_AOC2021
 import Data.Maybe (mapMaybe)
+import Paths_AOC2021
 import Data.Set (Set)
+import Paths_AOC2021
 import qualified Data.Set as Set
+import Paths_AOC2021
 import Data.PQueue.Prio.Min (MinPQueue)
+import Paths_AOC2021
 import qualified Data.PQueue.Prio.Min as Q
+import Paths_AOC2021
 import Debug.Trace
+import Paths_AOC2021
 import MyLib (drawGraph, drawMap, sqrtCeiling)
+import Paths_AOC2021
 import Data.Bifunctor (bimap)
 
 type Index = (Int, Int)

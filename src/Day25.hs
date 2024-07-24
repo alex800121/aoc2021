@@ -2,12 +2,19 @@
 
 module Day25 where
 
+import Paths_AOC2021
 import Data.Bifunctor (bimap)
+import Paths_AOC2021
 import Data.Either (isLeft)
+import Paths_AOC2021
 import qualified Data.Either as Set
+import Paths_AOC2021
 import Data.Map (fromSet, keysSet, partition, union)
+import Paths_AOC2021
 import Data.Set (Set)
+import Paths_AOC2021
 import qualified Data.Set as Set
+import Paths_AOC2021
 import MyLib (drawGraph, drawMap, firstRepeat)
 
 type Index = (Int, Int)

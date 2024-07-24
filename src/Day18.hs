@@ -2,8 +2,11 @@
 
 module Day18 where
 
+import Paths_AOC2021
 import Data.Char (digitToInt)
+import Paths_AOC2021
 import Data.List (foldl', foldl1')
+import Paths_AOC2021
 import Debug.Trace (trace)
 
 type Level = [Side]

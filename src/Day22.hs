@@ -1,9 +1,14 @@
 module Day22 where
 
+import Paths_AOC2021
 import Data.List.Split (splitOn, splitOneOf)
+import Paths_AOC2021
 import MyLib
+import Paths_AOC2021
 import Data.List (uncons, foldl')
+import Paths_AOC2021
 import Data.Char (isNumber)
+import Paths_AOC2021
 import Data.Maybe (mapMaybe)
 
 type S3 = S (S (S Z))

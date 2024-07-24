@@ -1,6 +1,8 @@
 module Day5 where
 
+import Paths_AOC2021
 import qualified Data.Map as Map
+import Paths_AOC2021
 import qualified Data.List.Split as Split
 
 type Index = (Int, Int)

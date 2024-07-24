@@ -1,5 +1,6 @@
 module Day2 where
 
+import Paths_AOC2021
 import Data.List (foldl')
 
 data Instruction = Forward Int | Up Int | Down Int deriving (Eq, Show)
