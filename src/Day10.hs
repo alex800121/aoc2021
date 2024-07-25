@@ -1,13 +1,10 @@
 module Day10 where
 
-import Paths_AOC2021
 import Data.Char (isSpace)
-import Paths_AOC2021
 import Data.Either (fromLeft, fromRight, isRight)
-import Paths_AOC2021
 import Data.List (foldl', sort)
-import Paths_AOC2021
 import GHC.List (uncons)
+import Paths_AOC2021
 
 findCorrupted :: String -> String -> Either Int Int
 findCorrupted ys [] =

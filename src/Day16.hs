@@ -1,15 +1,11 @@
 module Day16 where
 
-import Paths_AOC2021
+import Data.Bifunctor (Bifunctor (..))
 import Data.Char (digitToInt)
-import Paths_AOC2021
 import Data.Maybe (mapMaybe)
-import Paths_AOC2021
 import Data.Tuple (swap)
-import Paths_AOC2021
 import MyLib
 import Paths_AOC2021
-import Data.Bifunctor (Bifunctor(..))
 
 data Packet op payload
   = Lit {version :: Int, payLoad :: payload}
@@ -65,6 +61,7 @@ parsePayload ('1' : xs) = let (y, ys) = splitAt 4 xs in (y <>) <$> parsePayload 
 addVersion :: Packet op payload -> Int
 addVersion (Lit v p) = v
 addVersion (Op v _ p) = v + sum (map addVersion p)
+
 day16 :: IO ()
 day16 = do
   input <- concat . mapMaybe hexTo4Bits <$> (getDataDir >>= readFile . (++ "/input/input16.txt"))

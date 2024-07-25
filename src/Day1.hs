@@ -1,9 +1,9 @@
 module Day1 where
 
-import Paths_AOC2021
 import Data.List.Split (divvy)
+import Paths_AOC2021
 
-countIncrease :: Ord a => [a] -> Int
+countIncrease :: (Ord a) => [a] -> Int
 countIncrease = go 0
   where
     go n [] = n

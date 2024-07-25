@@ -1,10 +1,12 @@
 module Day2 where
 
-import Paths_AOC2021
 import Data.List (foldl')
+import Paths_AOC2021
 
 data Instruction = Forward Int | Up Int | Down Int deriving (Eq, Show)
+
 type Submarine = (Int, Int)
+
 type SubmarineAim = (Int, Int, Int)
 
 parseInput :: String -> Instruction

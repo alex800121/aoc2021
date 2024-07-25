@@ -1,28 +1,19 @@
 {-# LANGUAGE LambdaCase #-}
+
 module Day15 where
 
-import Paths_AOC2021
+import Data.Bifunctor (bimap)
 import Data.Char (digitToInt, intToDigit)
-import Paths_AOC2021
 import Data.Map (Map)
-import Paths_AOC2021
-import qualified Data.Map as Map
-import Paths_AOC2021
+import Data.Map qualified as Map
 import Data.Maybe (mapMaybe)
-import Paths_AOC2021
-import Data.Set (Set)
-import Paths_AOC2021
-import qualified Data.Set as Set
-import Paths_AOC2021
 import Data.PQueue.Prio.Min (MinPQueue)
-import Paths_AOC2021
-import qualified Data.PQueue.Prio.Min as Q
-import Paths_AOC2021
+import Data.PQueue.Prio.Min qualified as Q
+import Data.Set (Set)
+import Data.Set qualified as Set
 import Debug.Trace
-import Paths_AOC2021
 import MyLib (drawGraph, drawMap, sqrtCeiling)
 import Paths_AOC2021
-import Data.Bifunctor (bimap)
 
 type Index = (Int, Int)
 
@@ -33,6 +24,7 @@ type Hue = Int
 type Chitons = Map Index Int
 
 type Queue = MinPQueue Risk Index
+
 type Queue' = MinPQueue Hue (Index, Risk)
 
 type Cache = Set Index
@@ -91,8 +83,14 @@ day15 = do
       end = maximum keys
       width = fst end - fst start + 1
       height = snd end - snd start + 1
-      bigMap = Map.unions . Set.map (\(x, y) -> let added = 10 - x - y in
-        Map.mapKeys (bimap (+ (x * width)) (+ (y * height))) $ Map.map ((+ 1) . (`mod` 9) . subtract added) smallMap) $ Set.fromList [(x, y) | x <- [0..4], y <- [0..4]]
+      bigMap =
+        Map.unions
+          . Set.map
+            ( \(x, y) ->
+                let added = 10 - x - y
+                 in Map.mapKeys (bimap (+ (x * width)) (+ (y * height))) $ Map.map ((+ 1) . (`mod` 9) . subtract added) smallMap
+            )
+          $ Set.fromList [(x, y) | x <- [0 .. 4], y <- [0 .. 4]]
       keys' = Map.keys bigMap
       start' = minimum keys'
       end' = maximum keys'
