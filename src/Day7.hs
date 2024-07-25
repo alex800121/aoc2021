@@ -1,9 +1,8 @@
 module Day7 where
 
-import Paths_AOC2021
+import Data.List (sort)
 import Data.List.Split (splitOn)
 import Paths_AOC2021
-import Data.List (sort)
 
 day7 :: IO ()
 day7 = do

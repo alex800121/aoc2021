@@ -2,26 +2,17 @@
 
 module Day9 where
 
-import Paths_AOC2021
 import Data.Bifunctor (bimap)
-import Paths_AOC2021
 import Data.Char (chr, digitToInt, intToDigit, ord)
-import Paths_AOC2021
 import Data.Either (isLeft, lefts)
-import Paths_AOC2021
 import Data.List (sort)
-import Paths_AOC2021
 import Data.Map (Map)
-import Paths_AOC2021
-import qualified Data.Map as Map
-import Paths_AOC2021
+import Data.Map qualified as Map
 import Data.Maybe (catMaybes, fromJust, fromMaybe, mapMaybe)
-import Paths_AOC2021
 import Data.Set (Set)
-import Paths_AOC2021
-import qualified Data.Set as Set
-import Paths_AOC2021
+import Data.Set qualified as Set
 import MyLib
+import Paths_AOC2021
 
 type Index = (Int, Int)
 

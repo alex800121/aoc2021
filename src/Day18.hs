@@ -2,12 +2,10 @@
 
 module Day18 where
 
-import Paths_AOC2021
 import Data.Char (digitToInt)
-import Paths_AOC2021
 import Data.List (foldl', foldl1')
-import Paths_AOC2021
 import Debug.Trace (trace)
+import Paths_AOC2021
 
 type Level = [Side]
 
@@ -61,10 +59,12 @@ day18 = do
   -- input <- map (parseSNNum []) . lines <$> readFile "input/test18.txt"
   input <- map (parseSNNum []) . lines <$> (getDataDir >>= readFile . (++ "/input/input18.txt"))
   putStrLn $ ("day18a: " ++) $ show $ sum $ map magnitude $ foldl1' (\acc -> (`explode` []) . addSNNum acc) input
-  putStrLn $ ("day18b: " ++) $ show $
-    maximum $
-      [ (sum . map magnitude) (explode (addSNNum x y) [])
-        | x <- input,
-          y <- input,
-          x /= y
-      ]
+  putStrLn $
+    ("day18b: " ++) $
+      show $
+        maximum $
+          [ (sum . map magnitude) (explode (addSNNum x y) [])
+            | x <- input,
+              y <- input,
+              x /= y
+          ]

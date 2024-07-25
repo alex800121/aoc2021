@@ -68,11 +68,10 @@ library
         Day22,
         Day23,
         Day24,
-        Day25,
-        Paths_AOC2021
-
+        Day25
     -- Modules included in this library but not exported.
-    -- other-modules:
+    other-modules:
+        Paths_AOC2021
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
