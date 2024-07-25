@@ -46,7 +46,7 @@ day8 = do
       ( (\(x : y : _) -> (sort x, y)) . map (map sort . words) . splitOn " | "
       )
       . lines
-      <$> readFile "input/input8.txt"
+      <$> (getDataDir >>= readFile . (++ "/input/input8.txt"))
   let strings = map fromOriginal (permutations originalString)
       stringIDs = map (mapFirst (\x -> fromJust (find (\y -> all (`Map.member` y) x) strings))) input
       decoded = map (uncurry decode) stringIDs

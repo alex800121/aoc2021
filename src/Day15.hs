@@ -84,7 +84,7 @@ dijkstra chitons end q cache
 
 day15 :: IO ()
 day15 = do
-  smallMap <- drawMap (Just . digitToInt) . lines <$> readFile "input/input15.txt"
+  smallMap <- drawMap (Just . digitToInt) . lines <$> (getDataDir >>= readFile . (++ "/input/input15.txt"))
   -- smallMap <- drawMap (Just . digitToInt) . lines <$> readFile "input/test15.txt"
   let keys = Map.keys smallMap
       start = minimum keys

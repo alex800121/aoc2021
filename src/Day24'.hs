@@ -172,7 +172,7 @@ solb f i = optimize Lexicographic $ do
 
 day24 :: IO ()
 day24 = do
-  input <- mapMaybe (parseMaybe inputParser) . lines <$> readFile "input/input24.txt"
+  input <- mapMaybe (parseMaybe inputParser) . lines <$> (getDataDir >>= readFile . (++ "/input/input24.txt"))
   -- x <- sola maximize input
   -- y <- solb minimize input
   -- putStrLn . ("day24a: \n" ++) $ show x

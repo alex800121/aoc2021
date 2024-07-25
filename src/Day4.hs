@@ -35,7 +35,7 @@ lastBingo b (n : ns)
 
 day4 :: IO ()
 day4 = do
-  input <- splitOn "\n\n" <$> readFile "input/input4.txt"
+  input <- splitOn "\n\n" <$> (getDataDir >>= readFile . (++ "/input/input4.txt"))
   let numbers = map (read @Int) . splitOn "," $ head input
       boards = map (map (map (Just . read @Int) . words) . lines) $ tail input
   putStrLn $ ("day4a: " ++) $ show $ firstBingo boards numbers

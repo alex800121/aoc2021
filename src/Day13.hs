@@ -39,7 +39,7 @@ foldPaper p (Y i) = Set.map (\(x, y) -> (x, if y > i then (2 * i) - y else y)) p
 
 day13 :: IO ()
 day13 = do
-  input <- readFile "input/input13.txt"
+  input <- (getDataDir >>= readFile . (++ "/input/input13.txt"))
   let folded = uncurry (scanl' foldPaper) (parseInput input)
   putStrLn $ ("day13b: " ++) $ show $ length $ folded !! 1
   putStrLn "day13b:"
