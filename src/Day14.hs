@@ -46,7 +46,7 @@ ansA m = (maxM - minM) `div` 2
 
 day14 :: IO ()
 day14 = do
-  input <- readFile "input/input14.txt"
+  input <- (getDataDir >>= readFile . (++ "/input/input14.txt"))
   let (polymer, formula, start, end) = parseInput input
   putStrLn
     . ("day14a: " ++)

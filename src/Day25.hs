@@ -55,7 +55,7 @@ printSC sc = unlines $ drawGraph (\case Nothing -> '.'; Just True -> '>'; Just F
 day25 :: IO ()
 day25 = do
   -- input <- lines <$> readFile "input/test25.txt"
-  input <- lines <$> readFile "input/input25.txt"
+  input <- lines <$> (getDataDir >>= readFile . (++ "/input/input25.txt"))
   let h = length input
       w = length (head input)
       (e, s) = bimap keysSet keysSet $ partition id $ drawMap (\case '>' -> Just True; 'v' -> Just False; _ -> Nothing) input

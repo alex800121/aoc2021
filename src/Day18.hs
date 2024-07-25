@@ -59,7 +59,7 @@ magnitude (s, i) = i * product (map (\case L -> 3; R -> 2) s)
 day18 :: IO ()
 day18 = do
   -- input <- map (parseSNNum []) . lines <$> readFile "input/test18.txt"
-  input <- map (parseSNNum []) . lines <$> readFile "input/input18.txt"
+  input <- map (parseSNNum []) . lines <$> (getDataDir >>= readFile . (++ "/input/input18.txt"))
   putStrLn $ ("day18a: " ++) $ show $ sum $ map magnitude $ foldl1' (\acc -> (`explode` []) . addSNNum acc) input
   putStrLn $ ("day18b: " ++) $ show $
     maximum $

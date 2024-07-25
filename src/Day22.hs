@@ -35,7 +35,7 @@ calcOn = foldl' (\acc (x, y) -> acc * (y - x)) 1
 
 day22 :: IO ()
 day22 = do
-  input <- map parseInput . lines <$> readFile "input/input22.txt"
+  input <- map parseInput . lines <$> (getDataDir >>= readFile . (++ "/input/input22.txt"))
   let ans = readIns input
   putStrLn $ ("day22a: " ++) $ show $ sum $ mapMaybe (fmap calcOn . overlapEucVec (toVec s3 (replicate 3 (-50, 51)))) ans
   putStrLn $ ("day22b: " ++) $ show $ sum $ map calcOn ans

@@ -67,7 +67,7 @@ addVersion (Lit v p) = v
 addVersion (Op v _ p) = v + sum (map addVersion p)
 day16 :: IO ()
 day16 = do
-  input <- concat . mapMaybe hexTo4Bits <$> readFile "input/input16.txt"
+  input <- concat . mapMaybe hexTo4Bits <$> (getDataDir >>= readFile . (++ "/input/input16.txt"))
   let packet = snd $ parsePacket input
   putStrLn $ ("day16a: " ++) $ show $ addVersion packet
   putStrLn $ ("day16b: " ++) $ show $ interpretPacket $ bitToInt <$> packet

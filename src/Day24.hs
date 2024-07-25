@@ -50,7 +50,7 @@ solve = go 0 []
 
 day24 :: IO ()
 day24 = do
-  input <- mapMaybe readIns . chunksOf (252 `div` 14) . lines <$> readFile "input/input24.txt"
+  input <- mapMaybe readIns . chunksOf (252 `div` 14) . lines <$> (getDataDir >>= readFile . (++ "/input/input24.txt"))
   putStrLn
     . ("day24a: " ++)
     . map intToDigit

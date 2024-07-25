@@ -30,6 +30,6 @@ moveSubmarineAim (x, y, aim) i = case i of
 
 day2 :: IO ()
 day2 = do
-  input <- map parseInput . lines <$> readFile "input/input2.txt"
+  input <- map parseInput . lines <$> (getDataDir >>= readFile . (++ "/input/input2.txt"))
   putStrLn $ ("day2a: " ++) $ show $ uncurry (*) $ foldl' moveSubmarine (0, 0) input
   putStrLn $ ("day2b: " ++) $ show $ (\(x, y, _) -> x * y) $ foldl' moveSubmarineAim (0, 0, 0) input

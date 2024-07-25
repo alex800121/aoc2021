@@ -51,7 +51,7 @@ step = flashes . inc
 day11 :: IO ()
 day11 = do
   -- input <- drawMap (Just . digitToInt) . lines <$> readFile "input/test11.txt"
-  input <- drawMap (Just . digitToInt) . lines <$> readFile "input/input11.txt"
+  input <- drawMap (Just . digitToInt) . lines <$> (getDataDir >>= readFile . (++ "/input/input11.txt"))
   let x = iterate step input
   putStrLn
     . ("day11a: " ++)

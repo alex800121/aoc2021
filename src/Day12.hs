@@ -46,7 +46,7 @@ walkTill end cave currentPath cache
 
 day12 :: IO ()
 day12 = do
-  input <- Map.map Set.fromList . Map.unionsWith (<>) . map ((\(x : y : _) -> Map.fromList [(x, [y]), (y, [x])]) . splitOn "-") . lines <$> readFile "input/input12.txt"
+  input <- Map.map Set.fromList . Map.unionsWith (<>) . map ((\(x : y : _) -> Map.fromList [(x, [y]), (y, [x])]) . splitOn "-") . lines <$> (getDataDir >>= readFile . (++ "/input/input12.txt"))
   let notVisitedA = MultiSet.fromSet $ Map.keysSet input
       notVisitedB = MultiSet.fold (\x acc -> case x of
         x | x == "start" || x == "end" || isUpper (head x) -> acc

@@ -21,7 +21,7 @@ drawLine (start, end) = go acc start end
 
 day5 :: IO ()
 day5 = do
-  input <- map ((\(x : y : _) -> (x, y)) . map ((\(x : y : _) -> (x, y)) . map (read @Int) . Split.splitOn ",") . Split.splitOn " -> ") . lines <$> readFile "input/input5.txt"
+  input <- map ((\(x : y : _) -> (x, y)) . map ((\(x : y : _) -> (x, y)) . map (read @Int) . Split.splitOn ",") . Split.splitOn " -> ") . lines <$> (getDataDir >>= readFile . (++ "/input/input5.txt"))
   let lineA = length $ Map.filter (> 1) $ Map.unionsWith (+) $ map drawLine $ filter (\((x1, y1), (x2, y2)) -> x1 == x2 || y1 == y2) input
       lineB = length $ Map.filter (> 1) $ Map.unionsWith (+) $ map drawLine input
   putStrLn $ ("day5a: " ++) $ show lineA

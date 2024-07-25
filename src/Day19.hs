@@ -83,7 +83,7 @@ day19b s = go s 0
 
 day19 :: IO ()
 day19 = do
-  input <- map parseInput . splitOn "\n\n" <$> readFile "input/input19.txt"
+  input <- map parseInput . splitOn "\n\n" <$> (getDataDir >>= readFile . (++ "/input/input19.txt"))
   -- input <- map parseInput . splitOn "\n\n" <$> readFile "input/test19.txt"
   let input' = zip input (map distances input)
       ans = day19a [] input' ([], Set.empty)

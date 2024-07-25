@@ -173,7 +173,7 @@ day23 = do
            in ($ m) <$> n
       )
       . lines
-      <$> readFile "input/input23.txt"
+      <$> (getDataDir >>= readFile . (++ "/input/input23.txt"))
   input' <-
     drawMapWithKey
       ( \k a ->

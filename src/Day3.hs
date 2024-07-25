@@ -21,7 +21,7 @@ filterBitN n criteria def input
 
 day3 :: IO ()
 day3 = do
-  input <- map (map digitToInt) . lines <$> readFile "input/input3.txt"
+  input <- map (map digitToInt) . lines <$> (getDataDir >>= readFile . (++ "/input/input3.txt"))
   let len = length input
       a = map (fromEnum . (> 500)) $ foldr (zipWith (+)) (repeat 0) input
       b = map (fromEnum . not . toEnum) a

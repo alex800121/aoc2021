@@ -76,7 +76,7 @@ printArray f arr = g minX minY id
 
 day20 :: IO ()
 day20 = do
-  input <- splitOn "\n\n" <$> readFile "input/input20.txt"
+  input <- splitOn "\n\n" <$> (getDataDir >>= readFile . (++ "/input/input20.txt"))
   let rule = listArray (0, 511) $ map (== '#') $ filter (not . isSpace) $ head input :: Array Int Bool
       mem = Map.mapKeys (0,) $ drawMap (Just . (== '#')) $ lines (input !! 1)
       (minX, minY) = minimum $ map snd $ Map.keys mem
