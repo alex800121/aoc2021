@@ -1,35 +1,30 @@
 module Day8 where
 
-import Paths_AOC2021
 import Data.Char (chr, ord)
-import Paths_AOC2021
 import Data.List (elemIndex, find, findIndex, foldl', permutations, sort)
-import Paths_AOC2021
 import Data.List.Split (splitOn)
-import Paths_AOC2021
+import Data.Map (Map)
+import Data.Map qualified as Map
 import Data.Maybe (catMaybes, fromJust)
-import Paths_AOC2021
 import MyLib (mapFirst)
 import Paths_AOC2021
-import qualified Data.Map as Map
-import Paths_AOC2021
-import Data.Map (Map)
 
 original :: Map [Int] Int
-original = 
-  Map.fromList $ zip
-    [ [0, 1, 2, 4, 5, 6],
-      [2, 5],
-      [0, 2, 3, 4, 6],
-      [0, 2, 3, 5, 6],
-      [1, 2, 3, 5],
-      [0, 1, 3, 5, 6],
-      [0, 1, 3, 4, 5, 6],
-      [0, 2, 5],
-      [0, 1, 2, 3, 4, 5, 6],
-      [0, 1, 2, 3, 5, 6]
-    ]
-    [0..9]
+original =
+  Map.fromList $
+    zip
+      [ [0, 1, 2, 4, 5, 6],
+        [2, 5],
+        [0, 2, 3, 4, 6],
+        [0, 2, 3, 5, 6],
+        [1, 2, 3, 5],
+        [0, 1, 3, 5, 6],
+        [0, 1, 3, 4, 5, 6],
+        [0, 2, 5],
+        [0, 1, 2, 3, 4, 5, 6],
+        [0, 1, 2, 3, 5, 6]
+      ]
+      [0 .. 9]
 
 originalString = "abcdefg"
 

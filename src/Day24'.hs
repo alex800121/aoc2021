@@ -2,21 +2,14 @@
 
 module Day24 where
 
-import Paths_AOC2021
 import Control.Applicative (Alternative (empty), (<|>))
-import Paths_AOC2021
 import Control.Monad (guard)
-import Paths_AOC2021
 import Data.List (foldl')
-import Paths_AOC2021
 import Data.Maybe (mapMaybe)
-import Paths_AOC2021
 import Data.SBV hiding (Interval)
-import Paths_AOC2021
 import MyLib (Parser, signedInteger)
 import Paths_AOC2021
 import Text.Megaparsec (choice, eof, parseMaybe, single)
-import Paths_AOC2021
 import Text.Megaparsec.Char (space, string)
 
 data Instruction a b
@@ -178,5 +171,6 @@ day24 = do
   -- putStrLn . ("day24a: \n" ++) $ show x
   -- putStrLn . ("day24a: \n" ++) $ show y
   putStrLn $ ("day24a: " ++) $ concatMap show $ head $ readIns' [9, 8 .. 1] (R 0 0 0 0) input
-  putStrLn $ ("day24b: " ++) $ concatMap show $ head $ readIns' [1..9] (R 0 0 0 0) input
-  -- print $ calcInt (intervalify (R 0 0 0 0)) input
+  putStrLn $ ("day24b: " ++) $ concatMap show $ head $ readIns' [1 .. 9] (R 0 0 0 0) input
+
+-- print $ calcInt (intervalify (R 0 0 0 0)) input

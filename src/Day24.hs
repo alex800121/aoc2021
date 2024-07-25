@@ -1,14 +1,11 @@
+-- stack needs to be popped
+
 module Day24 where
 
-import Paths_AOC2021
 import Data.Char (intToDigit)
-import Paths_AOC2021
 import Data.List ((\\))
-import Paths_AOC2021
 import Data.List.Split (chunksOf)
-import Paths_AOC2021
 import Data.Maybe (fromJust, mapMaybe)
-import Paths_AOC2021
 import MyLib ((!?))
 import Paths_AOC2021
 import Text.Read (readMaybe)
@@ -45,7 +42,6 @@ solve = go 0 []
         j0 = inp !! j - (inp_i - 9)
         j1 = inp !! j + (1 - inp_i)
 
--- stack needs to be popped
 -- => w == stack_pop + yadd + xcheck
 
 day24 :: IO ()

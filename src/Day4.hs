@@ -1,13 +1,10 @@
 module Day4 where
 
-import Paths_AOC2021
 import Data.Foldable (find)
-import Paths_AOC2021
 import Data.List (transpose)
-import Paths_AOC2021
 import Data.List.Split
-import Paths_AOC2021
 import Data.Maybe (fromMaybe, isNothing)
+import Paths_AOC2021
 
 type Board = [[Maybe Int]]
 

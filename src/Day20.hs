@@ -2,28 +2,18 @@
 
 module Day20 where
 
-import Paths_AOC2021
+import Control.Monad (forM)
 import Control.Monad.Trans.State.Strict
-import Paths_AOC2021
-import Data.Array.IArray (Array, elems, listArray, array, (!), IArray (bounds))
-import Paths_AOC2021
+import Data.Array.IArray (Array, IArray (bounds), array, elems, listArray, (!))
+import Data.Bifunctor (bimap)
+import Data.Char (isSpace)
+import Data.List (foldl')
 import Data.List.Split (splitOn)
-import Paths_AOC2021
 import Data.Map (Map)
-import Paths_AOC2021
-import qualified Data.Map as Map
-import Paths_AOC2021
+import Data.Map qualified as Map
 import Data.Maybe (fromMaybe)
-import Paths_AOC2021
 import MyLib (drawMap)
 import Paths_AOC2021
-import Control.Monad (forM)
-import Paths_AOC2021
-import Data.Bifunctor (bimap)
-import Paths_AOC2021
-import Data.List (foldl')
-import Paths_AOC2021
-import Data.Char (isSpace)
 
 type Rule = Array Int Bool
 

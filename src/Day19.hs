@@ -1,27 +1,17 @@
 module Day19 where
 
-import Paths_AOC2021
 import Control.Applicative (Alternative (empty))
-import Paths_AOC2021
-import Data.List (intersect, nub, transpose, insert)
-import Paths_AOC2021
-import Data.List.Split (splitOn)
-import Paths_AOC2021
-import Data.Maybe (listToMaybe)
-import Paths_AOC2021
-import Data.Char (isDigit)
-import Paths_AOC2021
-import Data.Set (Set)
-import Paths_AOC2021
-import qualified Data.Set as Set
-import Paths_AOC2021
 import Control.Monad (guard)
-import Paths_AOC2021
+import Data.Bifunctor (bimap)
+import Data.Char (isDigit)
+import Data.Either (partitionEithers)
+import Data.List (insert, intersect, nub, transpose)
+import Data.List.Split (splitOn)
+import Data.Maybe (listToMaybe)
+import Data.Set (Set)
+import Data.Set qualified as Set
 import Debug.Trace (trace)
 import Paths_AOC2021
-import Data.Either (partitionEithers)
-import Paths_AOC2021
-import Data.Bifunctor (bimap)
 
 type Index = (Int, Int, Int)
 

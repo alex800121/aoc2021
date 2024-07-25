@@ -1,9 +1,8 @@
 module Day3 where
 
-import Paths_AOC2021
+import Control.Applicative (liftA2)
 import Data.Char (digitToInt)
 import Paths_AOC2021
-import Control.Applicative (liftA2)
 
 filterBitN :: Int -> Ordering -> Int -> [[Int]] -> [Int]
 filterBitN n criteria def input

@@ -2,20 +2,14 @@
 
 module Day25 where
 
-import Paths_AOC2021
 import Data.Bifunctor (bimap)
-import Paths_AOC2021
 import Data.Either (isLeft)
-import Paths_AOC2021
-import qualified Data.Either as Set
-import Paths_AOC2021
+import Data.Either qualified as Set
 import Data.Map (fromSet, keysSet, partition, union)
-import Paths_AOC2021
 import Data.Set (Set)
-import Paths_AOC2021
-import qualified Data.Set as Set
-import Paths_AOC2021
+import Data.Set qualified as Set
 import MyLib (drawGraph, drawMap, firstRepeat)
+import Paths_AOC2021
 
 type Index = (Int, Int)
 
@@ -28,22 +22,23 @@ run f1 f2 f3 f4 f5 sc = f5 e' sc
     w = f1 sc
     f x = let a = f2 (+) w x in if a `Set.member` f4 sc || a `Set.member` f3 sc then x else a
     e' = Set.map f $ f3 sc
-    -- f x = let a = f2 (+) w x in if a `Set.member` f4 sc then Left x else Right a
-    -- (l, r) =
-    --   Set.fold
-    --     ( \x (accx, accy) -> case f x of
-    --         Left x -> (Set.insert x accx, accy)
-    --         Right x -> (accx, Set.insert x accy)
-    --     )
-    --     (Set.empty, Set.empty)
-    --     $ f3 sc
-    -- g (x, y)
-    --   | Set.null x = y
-    --   | otherwise = g (x', yr `Set.union` x)
-    --   where
-    --     (yl, yr) = Set.partition (`Set.member` x) y
-    --     x' = Set.map (f2 (-) w) yl
-    -- e' = g (l, r)
+
+-- f x = let a = f2 (+) w x in if a `Set.member` f4 sc then Left x else Right a
+-- (l, r) =
+--   Set.fold
+--     ( \x (accx, accy) -> case f x of
+--         Left x -> (Set.insert x accx, accy)
+--         Right x -> (accx, Set.insert x accy)
+--     )
+--     (Set.empty, Set.empty)
+--     $ f3 sc
+-- g (x, y)
+--   | Set.null x = y
+--   | otherwise = g (x', yr `Set.union` x)
+--   where
+--     (yl, yr) = Set.partition (`Set.member` x) y
+--     x' = Set.map (f2 (-) w) yl
+-- e' = g (l, r)
 
 runEast = run _width (\f w (x, y) -> (f x 1 `mod` w, y)) _east _south (\x sc -> sc {_east = x})
 

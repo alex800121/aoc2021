@@ -9,6 +9,7 @@ type Velocity = (Int, Int)
 type Target = (Range, Range)
 
 targetArea = ((288, 330), (-96, -50))
+
 -- targetArea = ((20, 30), (-10, -5))
 
 withinTarget :: Target -> Index -> Velocity -> Bool
@@ -18,6 +19,7 @@ withinTarget target@((minX, maxX), (minY, maxY)) (x, y) (vX, vY)
   | otherwise = withinTarget target (x + vX, y + vY) (max 0 (vX - 1), vY - 1)
 
 yRange = [(fst (snd targetArea)) .. (negate (fst (snd targetArea)) - 1)]
+
 xRange = dropWhile (\x -> (x * (x + 1)) `div` 2 < fst (fst targetArea)) [1 .. (snd (fst targetArea))]
 
 day17 :: IO ()

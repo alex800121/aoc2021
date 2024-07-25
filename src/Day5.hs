@@ -1,12 +1,13 @@
 module Day5 where
 
+import Data.List.Split qualified as Split
+import Data.Map qualified as Map
 import Paths_AOC2021
-import qualified Data.Map as Map
-import Paths_AOC2021
-import qualified Data.List.Split as Split
 
 type Index = (Int, Int)
+
 type Ends = (Index, Index)
+
 type Line = Map.Map Index Int
 
 drawLine :: Ends -> Line

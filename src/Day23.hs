@@ -2,28 +2,18 @@
 
 module Day23 where
 
-import Paths_AOC2021
 import Data.Bifunctor (bimap)
-import Paths_AOC2021
 import Data.List
-import Paths_AOC2021
 import Data.Map (Map)
-import Paths_AOC2021
-import qualified Data.Map as Map
-import Paths_AOC2021
+import Data.Map qualified as Map
 import Data.Maybe (isJust, isNothing, mapMaybe)
-import Paths_AOC2021
 import Data.PQueue.Prio.Min (MinPQueue)
-import Paths_AOC2021
-import qualified Data.PQueue.Prio.Min as Q
-import Paths_AOC2021
+import Data.PQueue.Prio.Min qualified as Q
 import Data.Set (Set)
-import Paths_AOC2021
-import qualified Data.Set as Set
-import Paths_AOC2021
+import Data.Set qualified as Set
 import Debug.Trace
-import Paths_AOC2021
 import MyLib (drawGraph, drawMapWithKey)
+import Paths_AOC2021
 
 type Index = (Int, Int)
 
@@ -191,6 +181,6 @@ day23 = do
            in ($ m) <$> n
       )
       . lines
-      <$> readFile "input/input23'.txt"
+      <$> (getDataDir >>= readFile . (++ "/input/input23'.txt"))
   putStrLn $ ("day23a: " ++) $ show $ dijkstra Set.empty (Q.singleton 0 input)
   putStrLn $ ("day23b: " ++) $ show $ dijkstra Set.empty (Q.singleton 0 input')
