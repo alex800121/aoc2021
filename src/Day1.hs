@@ -14,6 +14,6 @@ countIncrease = go 0
 
 day1 :: IO ()
 day1 = do
-  input <- map (read @Int) . lines <$> readFile "input/input1.txt"
+  input <- map (read @Int) . lines <$> (getDataDir >>= readFile . (++ "/input/input1.txt"))
   putStrLn $ ("day1a: " ++) $ show $ countIncrease input
   putStrLn $ ("day1b: " ++) $ show $ countIncrease $ map sum $ divvy 3 1 input

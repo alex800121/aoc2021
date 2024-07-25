@@ -36,7 +36,7 @@ findCorrupted ys (x : xs) = case (x, uncons ys) of
 
 day10 :: IO ()
 day10 = do
-  input <- lines <$> readFile "input/input10.txt"
+  input <- lines <$> (getDataDir >>= readFile . (++ "/input/input10.txt"))
   putStrLn
     . ("day10a: " ++)
     . show

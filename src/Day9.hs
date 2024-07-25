@@ -85,7 +85,7 @@ searchLowPoints lava
 day9 :: IO ()
 day9 = do
   -- input <- drawMap (Just . Left @Int @Int . digitToInt) . lines <$> readFile "input/test9.txt"
-  input <- drawMap (Just . digitToInt) . lines <$> readFile "input/input9.txt"
+  input <- drawMap (Just . digitToInt) . lines <$> (getDataDir >>= readFile . (++ "/input/input9.txt"))
   putStrLn
     . ("day9a: " ++)
     . show
