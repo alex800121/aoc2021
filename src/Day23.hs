@@ -148,39 +148,39 @@ day23 :: IO ()
 day23 = do
   input <-
     drawMapWithKey
-      ( \k a ->
+      ( \k@(kx, ky) a ->
           let n = case k of
                 (x, 1) | x `elem` [3, 5, 7, 9] -> Just Space
-                (3, y) | isJust m -> Just (Dest A)
-                (5, y) | isJust m -> Just (Dest B)
-                (7, y) | isJust m -> Just (Dest C)
-                (9, y) | isJust m -> Just (Dest D)
+                (3, y) | a `elem` "ABCD" -> Just (Dest A)
+                (5, y) | a `elem` "ABCD" -> Just (Dest B)
+                (7, y) | a `elem` "ABCD" -> Just (Dest C)
+                (9, y) | a `elem` "ABCD" -> Just (Dest D)
                 (x, 1) | x `elem` [1, 2, 4, 6, 8, 10, 11] -> Just Corridor
                 _ -> Nothing
-              m = case a of
-                x | x `elem` "ABCD" -> Just (read @Pods [x])
-                _ -> Nothing
-           in ($ m) <$> n
+           in case a of
+                '\n' -> ((0, ky + 1), Nothing)
+                x | x `elem` "ABCD" -> ((kx + 1, ky), ($ Just (read @Pods [x])) <$> n)
+                _ -> ((kx + 1, ky), ($ Nothing) <$> n)
       )
-      . lines
+      (0, 0)
       <$> (getDataDir >>= readFile . (++ "/input/input23.txt"))
   input' <-
     drawMapWithKey
-      ( \k a ->
+      ( \k@(kx, ky) a ->
           let n = case k of
                 (x, 1) | x `elem` [3, 5, 7, 9] -> Just Space
-                (3, y) | isJust m -> Just (Dest A)
-                (5, y) | isJust m -> Just (Dest B)
-                (7, y) | isJust m -> Just (Dest C)
-                (9, y) | isJust m -> Just (Dest D)
+                (3, y) | a `elem` "ABCD" -> Just (Dest A)
+                (5, y) | a `elem` "ABCD" -> Just (Dest B)
+                (7, y) | a `elem` "ABCD" -> Just (Dest C)
+                (9, y) | a `elem` "ABCD" -> Just (Dest D)
                 (x, 1) | x `elem` [1, 2, 4, 6, 8, 10, 11] -> Just Corridor
                 _ -> Nothing
-              m = case a of
-                x | x `elem` "ABCD" -> Just (read @Pods [x])
-                _ -> Nothing
-           in ($ m) <$> n
+           in case a of
+                '\n' -> ((0, ky + 1), Nothing)
+                x | x `elem` "ABCD" -> ((kx + 1, ky), ($ Just (read @Pods [x])) <$> n)
+                _ -> ((kx + 1, ky), ($ Nothing) <$> n)
       )
-      . lines
+      (0, 0)
       <$> (getDataDir >>= readFile . (++ "/input/input23'.txt"))
   putStrLn $ ("day23a: " ++) $ show $ dijkstra Set.empty (Q.singleton 0 input)
   putStrLn $ ("day23b: " ++) $ show $ dijkstra Set.empty (Q.singleton 0 input')
