@@ -1,186 +1,189 @@
-{-# LANGUAGE LambdaCase #-}
-
 module Day23 where
 
-import Data.Bifunctor (bimap)
-import Data.List
-import Data.Map (Map)
-import Data.Map qualified as Map
-import Data.Maybe (isJust, isNothing, mapMaybe)
-import Data.PQueue.Prio.Min (MinPQueue)
+import Data.Char (chr, isAlpha, ord)
+import Data.IntSet (IntSet)
+import Data.IntSet qualified as IS
+import Data.List (find, findIndex, foldl')
+import Data.PQueue.Prio.Min (MinPQueue (..))
 import Data.PQueue.Prio.Min qualified as Q
-import Data.Set (Set)
-import Data.Set qualified as Set
-import Debug.Trace
-import MyLib (drawGraph, drawMapWithKey)
-import Paths_AOC2021
+import Data.Vector.Unboxed (Vector)
+import Data.Vector.Unboxed qualified as V
+import Debug.Trace (traceShow)
+import Paths_AOC2021 (getDataDir)
 
-type Index = (Int, Int)
+type GameState = (Int, Vector Int)
 
-type Risk = Int
+{-
+00 01 02 03 04 05 06 07 08 09 10
+      11    13    15    17
+      12    14    16    18
+-}
 
-type Heu = Int
+hallwayIndex = [0, 1, 3, 5, 7, 9, 10]
 
-data Pods = A | B | C | D deriving (Show, Eq, Ord, Read, Enum)
+hToRChoices :: GameState -> [(Int, GameState)]
+hToRChoices (cost, v) =
+  [ (hue, (cost', v'))
+    | h <- hallwayIndex,
+      let pod = v V.! h,
+      pod /= 0,
+      let room = pod - 1,
+      availRoom v room,
+      let p = path h (room * 2 + 2),
+      pathClear v h p,
+      let vacant = calcVacant v room,
+      let r = 11 + room * depth v + vacant - 1,
+      let cost' = cost + (vacant + length p - 1) * (10 ^ (pod - 1)),
+      let v' = v V.// [(h, 0), (r, pod)],
+      let hue = cost' + calcHue v'
+  ]
 
-data Space
-  = Corridor {getPod :: Maybe Pods}
-  | Dest {dest :: Pods, getPod :: Maybe Pods}
-  | Space {getPod :: Maybe Pods}
-  deriving (Show, Eq, Ord)
-
-finished :: Map Index Space -> Bool
-finished =
-  all
-    ( \case
-        Dest x y -> Just x == y
-        x -> True
-    )
-    . Map.elems
-
-dijkstra :: Set (Map Index Space) -> MinPQueue Risk (Map Index Space) -> Maybe Risk
-dijkstra acc q = case Q.minViewWithKey q of
-  Nothing -> Nothing
-  Just ((r, a), q') | a `Set.member` acc -> dijkstra acc q'
-  Just ((r, a), q') ->
-    if finished a
-      then Just r
-      else
-        let q'' = Q.union q' $ Q.unions $ map (candidates (r, a)) $ Map.keys a
-            acc' = Set.insert a acc
-         in dijkstra acc' q''
-
-candidates :: (Risk, Map Index Space) -> Index -> MinPQueue Risk (Map Index Space)
-candidates (r, m) i = case m Map.!? i of
-  Just (Corridor (Just p)) ->
-    foldl'
-      ( \b (r, k) -> case m Map.!? k of
-          Just (Dest y Nothing)
-            | p == y && isDest' p (fmap (+ 1) k) ->
-                Q.insert r (Map.insert i (Corridor Nothing) $ Map.insert k (Dest y (Just p)) m) b
-          _ -> b
-      )
-      Q.empty
-      $ flooded (risk p)
-  Just (Dest p (Just p'))
-    | any cond [fmap (+ f) i | f <- [-3 .. 3]] ->
-        fst
-          $ foldl'
-            ( \(b, s) (r, a) -> case m Map.!? a of
-                Just (Corridor Nothing)
-                  | p' `Set.notMember` s ->
-                      ( Q.insert
-                          r
-                          ( Map.insert i (Dest p Nothing) $
-                              Map.insert a (Corridor (Just p')) m
-                          )
-                          b,
-                        s
-                      )
-                Just (Dest y Nothing)
-                  | p' == y && isDest' p' (fmap (+ 1) a) ->
-                      ( Q.insert
-                          r
-                          ( Map.insert i (Dest p Nothing) $
-                              Map.insert a (Dest y (Just p')) m
-                          )
-                          b,
-                        Set.insert p' s
-                      )
-                _ -> (b, s)
-            )
-            (Q.empty, Set.empty)
-          $ flooded (risk p')
-  _ -> Q.empty
+showVec :: Vector Int -> String
+showVec v = s0 ++ '\n' : go 0 0
   where
-    risk x = case x of
-      A -> 1
-      B -> 10
-      C -> 100
-      D -> 1000
-    cond b = case m Map.!? b of
-      Just (Dest c (Just c')) -> c /= c'
-      _ -> False
-    isDest' x j = case m Map.!? j of
-      Nothing -> True
-      Just (Dest y (Just z)) | x == y && x == z -> isDest' x (fmap (+ 1) j)
-      _ -> False
-    flooded j = flood j Set.empty [(r, i)] []
-    flood :: Risk -> Set Index -> [(Int, Index)] -> [(Int, Index)] -> [(Int, Index)]
-    flood risk = go
+    d = depth v
+    f 0 = '.'
+    f x = chr (x - 1 + ord 'A')
+    s0 = take 11 $ map f $ V.toList v
+    go r de
+      | de >= d = ""
+      | r >= 4 = '\n' : go 0 (succ de)
+      | r == 0 = "  " ++ f (v V.! i) : go (r + 1) de
+      | otherwise = ' ' : f (v V.! i) : go (r + 1) de
       where
-        go visited start acc
-          | null start = acc
-          | otherwise = go visited' start' acc'
-          where
-            f k v =
-              k `Set.notMember` v && case m Map.!? k of
-                Just x | isNothing (getPod x) -> True
-                _ -> False
-            (start', visited') =
-              foldl'
-                ( \acc (r, (x, y)) ->
-                    foldl'
-                      ( \(s', v') (x', y') ->
-                          let z = (x + x', y + y')
-                           in if f z v'
-                                then ((r + risk, z) : s', Set.insert z v')
-                                else (s', v')
-                      )
-                      acc
-                      adjacent
-                )
-                ([], visited)
-                start
-            acc' = start <> acc
+        i = 11 + r * d + de
 
-adjacent :: [Index]
-adjacent = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+rToRChoices :: GameState -> [(Int, GameState)]
+rToRChoices (cost, v) =
+  [ (targetHue, (targetCost, targetV))
+    | room <- [0 .. 3],
+      not (availRoom v room),
+      let vacant = calcVacant v room,
+      let roomHall = room * 2 + 2,
+      let podLoc = 11 + room * d + vacant,
+      let pod = v V.! podLoc,
+      let targetRoom = pod - 1,
+      room /= targetRoom,
+      availRoom v targetRoom,
+      let targetHall = targetRoom * 2 + 2,
+      let targetPath = path targetHall roomHall,
+      pathClear v targetHall targetPath,
+      let targetVacant = calcVacant v targetRoom,
+      let targetLoc = 11 + targetRoom * d + targetVacant - 1,
+      let targetV = v V.// [(targetLoc, pod), (podLoc, 0)],
+      let targetCost = cost + (vacant + length targetPath + targetVacant) * (10 ^ (pod - 1)),
+      let targetHue = targetCost + calcHue targetV
+  ]
+  where
+    d = depth v
 
-draw :: Map Index Space -> String
-draw =
-  unlines
-    . drawGraph
-      ( \case Nothing -> ' '; Just x -> (case getPod x of Nothing -> '.'; Just y -> head (show y))
-      )
+rToHChoices :: GameState -> [(Int, GameState)]
+rToHChoices (cost, v) =
+  [ (hue, (cost', v'))
+    | room <- [0 .. 3],
+      not (availRoom v room),
+      h <- hallwayIndex,
+      v V.! h == 0,
+      let vacant = calcVacant v room,
+      vacant < 4,
+      let r = 11 + room * depth v + vacant,
+      let pod = v V.! r,
+      let p = path h (room * 2 + 2),
+      pathClear v h p,
+      let cost' = cost + (vacant + length p) * (10 ^ (pod - 1)),
+      let v' = v V.// [(h, pod), (r, 0)],
+      let hue = cost' + calcHue v'
+  ]
+
+depth v = (V.length v - 11) `div` 4
+
+path h r = [min h r .. max h r]
+
+pathClear v h = all f
+  where
+    f x = x == h || v V.! x == 0
+
+calcVacant v room = length $ takeWhile (\x -> v V.! (11 + room * d + x) == 0) [0 .. d - 1]
+  where
+    d = depth v
+
+availRoom v room = all f [0 .. d - 1]
+  where
+    d = depth v
+    pod = room + 1
+    f x = y == 0 || y == pod
+      where
+        y = v V.! (11 + room * d + x)
+
+inputParser :: String -> Vector Int
+inputParser s = V.replicate l 0 V.// go 0 0 b
+  where
+    l = length s
+    depth = (l - 11) `div` 4
+    (a, b) = splitAt 11 s
+    f '.' = 0
+    f x = ord x - ord 'A' + 1
+    go _ _ [] = zip [0 ..] (map f a)
+    go r d (x : xs)
+      | r >= 4 = go 0 (succ d) (x : xs)
+      | otherwise = (11 + depth * r + d, f x) : go (succ r) d xs
+
+complete v =
+  and
+    [ pod == room + 1
+      | room <- [0 .. 3],
+        d <- [0 .. depth v - 1],
+        let pod = v V.! (11 + room * depth v + d)
+    ]
+
+calcHue v = hallway + room
+  where
+    hallway =
+      sum
+        [ (length (path h (room * 2 + 2)) - 1) * (10 ^ (pod - 1))
+          | h <- hallwayIndex,
+            let pod = v V.! h,
+            pod /= 0,
+            let room = pod - 1
+        ]
+    room =
+      sum
+        [ moveIn + moveOut
+          | r <- [0 .. 3],
+            not (availRoom v r),
+            s <- [0 .. d - 1],
+            let pod = v V.! (11 + r * d + s),
+            pod /= r + 1,
+            let moveIn = (s + 1) * (10 ^ r),
+            let targetRoom = pod - 1,
+            let p = path (r * 2 + 2) (targetRoom * 2 + 2),
+            let moveOut = if pod == 0 then 0 else (length p + s) * (10 ^ (pod - 1))
+        ]
+    d = depth v
+
+fastComplete :: Vector Int -> Bool
+fastComplete = V.all (== 0) . V.take 11
+
+toInt = V.foldl' (\acc x -> acc * 5 + x) 0
+
+aStar v = go IS.empty (Q.singleton 0 (0, v))
+  where
+    go _ Empty = Nothing
+    go s ((_, x) :< xs)
+      | complete (snd x) = Just $ fst x
+      | xInt `IS.member` s = go s xs
+      | not $ null hToR = go (IS.insert xInt s) (Q.fromList hToR <> xs)
+      | not $ null rToR = go (IS.insert xInt s) (Q.fromList rToR <> xs)
+      | otherwise = go (IS.insert xInt s) (Q.fromList rToH <> xs)
+      where
+        hToR = hToRChoices x
+        rToR = rToRChoices x
+        rToH = rToHChoices x
+        xInt = toInt (snd x)
 
 day23 :: IO ()
 day23 = do
-  input <-
-    drawMapWithKey
-      ( \k a ->
-          let n = case k of
-                (x, 1) | x `elem` [3, 5, 7, 9] -> Just Space
-                (3, y) | isJust m -> Just (Dest A)
-                (5, y) | isJust m -> Just (Dest B)
-                (7, y) | isJust m -> Just (Dest C)
-                (9, y) | isJust m -> Just (Dest D)
-                (x, 1) | x `elem` [1, 2, 4, 6, 8, 10, 11] -> Just Corridor
-                _ -> Nothing
-              m = case a of
-                x | x `elem` "ABCD" -> Just (read @Pods [x])
-                _ -> Nothing
-           in ($ m) <$> n
-      )
-      . lines
-      <$> (getDataDir >>= readFile . (++ "/input/input23.txt"))
-  input' <-
-    drawMapWithKey
-      ( \k a ->
-          let n = case k of
-                (x, 1) | x `elem` [3, 5, 7, 9] -> Just Space
-                (3, y) | isJust m -> Just (Dest A)
-                (5, y) | isJust m -> Just (Dest B)
-                (7, y) | isJust m -> Just (Dest C)
-                (9, y) | isJust m -> Just (Dest D)
-                (x, 1) | x `elem` [1, 2, 4, 6, 8, 10, 11] -> Just Corridor
-                _ -> Nothing
-              m = case a of
-                x | x `elem` "ABCD" -> Just (read @Pods [x])
-                _ -> Nothing
-           in ($ m) <$> n
-      )
-      . lines
-      <$> (getDataDir >>= readFile . (++ "/input/input23'.txt"))
-  putStrLn $ ("day23a: " ++) $ show $ dijkstra Set.empty (Q.singleton 0 input)
-  putStrLn $ ("day23b: " ++) $ show $ dijkstra Set.empty (Q.singleton 0 input')
+  inputA <- filter ((||) <$> (== '.') <*> isAlpha) <$> (getDataDir >>= (readFile . (++ "/input/input23'.txt")))
+  let inputB = take 15 inputA <> "DCBADBAC" <> drop 15 inputA
+  print $ aStar $ inputParser inputA
+  print $ aStar $ inputParser inputB

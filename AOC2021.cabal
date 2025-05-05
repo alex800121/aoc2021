@@ -25,6 +25,7 @@ common shared
     default-language: GHC2021
     build-depends:
         base >= 4.17.0.0,
+        wide-word,
         megaparsec,
         parser-combinators,
         transformers,
@@ -36,10 +37,23 @@ common shared
         base16-bytestring,
         multiset,
         pqueue,
-        sbv,
         AOC
     default-extensions: TypeFamilies, OverloadedRecordDot, TypeApplications, DataKinds
     ghc-options: -O2
+
+benchmark main-bench
+    type: exitcode-stdio-1.0
+    hs-source-dirs:      benchmark
+    main-is:             AOCBench.hs
+    build-depends:    
+        base,
+        criterion,
+        AOC2021,
+        AOC
+    default-language:    GHC2021
+    -- ghc-options: -O2 
+    -- ghc-options: -O2 -threaded
+    ghc-options: -O2 -threaded -rtsopts "-with-rtsopts=-N -T"
 
 library
     import: shared
@@ -118,3 +132,4 @@ executable AOC2021
     --     AOC2021
     
     hs-source-dirs:   app, src
+    ghc-options: -O2 -threaded -rtsopts "-with-rtsopts=-N -T"

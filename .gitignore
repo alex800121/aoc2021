@@ -2,4 +2,4 @@ dist-newstyle/*
 .vscode/*
 app/Main
 **/tags
-**/input
+*.html
