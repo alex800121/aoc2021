@@ -92,6 +92,9 @@ rToHChoices (cost, v) =
       pathClear v h p,
       let cost' = cost + (vacant + length p) * (10 ^ (pod - 1)),
       let v' = v V.// [(h, pod), (r, 0)],
+      not (mutualBlock v'),
+      not (leftBlock v'),
+      not (rightBlock v'),
       let hue = cost' + calcHue v'
   ]
 
@@ -135,6 +138,37 @@ complete v =
         d <- [0 .. depth v - 1],
         let pod = v V.! (11 + room * depth v + d)
     ]
+
+rightBlock v = pod7 == 4 && vacantHall < outRoomD
+  where
+    d = depth v
+    pod7 = v V.! 7
+    roomD = [10 + d, 9 + d .. 11]
+    outRoomD = d - length (takeWhile (\x -> v V.! x == 4) roomD)
+    vacantHall = length (filter (\x -> v V.! x == 0) [9, 10])
+
+leftBlock v = pod3 == 1 && vacantHall < outRoomA
+  where
+    d = depth v
+    pod3 = v V.! 3
+    roomA = [10 + d, 9 + d .. 11]
+    outRoomA = d - length (takeWhile (\x -> v V.! x == 1) roomA)
+    vacantHall = length (filter (\x -> v V.! x == 0) [0, 1])
+
+mutualBlock v = go testHall
+  where
+    testHall = [3, 5, 7]
+    go (x : xs@(_ : _)) = podLeft /= 0 && any f xs || go xs
+      where
+        podLeft = v V.! x
+        roomLeft = podLeft - 1
+        hallLeft = roomLeft * 2 + 2
+        f y = podRight /= 0 && y < hallLeft && hallRight < x
+          where
+            podRight = v V.! y
+            roomRight = podRight - 1
+            hallRight = roomRight * 2 + 2
+    go _ = False
 
 calcHue v = hallway + room
   where
@@ -183,7 +217,15 @@ aStar v = go IS.empty (Q.singleton 0 (0, v))
 
 day23 :: IO ()
 day23 = do
-  inputA <- filter ((||) <$> (== '.') <*> isAlpha) <$> (getDataDir >>= (readFile . (++ "/input/input23'.txt")))
+  inputA <- filter ((||) <$> (== '.') <*> isAlpha) <$> (getDataDir >>= (readFile . (++ "/input/input23.txt")))
   let inputB = take 15 inputA <> "DCBADBAC" <> drop 15 inputA
-  print $ aStar $ inputParser inputA
-  print $ aStar $ inputParser inputB
+  putStrLn
+    . ("day23a: " ++)
+    . show
+    . aStar
+    $ inputParser inputA
+  putStrLn
+    . ("day23b: " ++)
+    . show
+    . aStar
+    $ inputParser inputB
