@@ -1,11 +1,11 @@
 module Day22 where
 
 import Data.Char (isNumber)
+import Data.List (foldl', uncons)
 import Data.List.Split (splitOneOf)
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Paths_AOC2021 (getDataDir)
-import Data.List (uncons, foldl')
 
 type Range = (Int, Int)
 
@@ -31,9 +31,16 @@ parseInput s = (b', v)
 readIns :: [(Bool, V3 Range)] -> Map (V3 Range) Int
 readIns = foldl' f Map.empty
   where
-    f acc (b, v) = (if b then Map.insertWith (+) v 1 else id) (Map.unionWith (+) acc (Map.foldlWithKey' g Map.empty acc))
+    f acc (b, v) = (if b then Map.insertWith (+) v 1 else id) (Map.foldlWithKey' g acc acc)
       where
-        g acc k x = maybe acc (\k -> Map.insertWith (+) k (-x) acc) (overlapEucVec v k)
+        g acc k x =
+          maybe
+            acc
+            ( \k -> case acc Map.!? k of
+                Just y -> if x == y then Map.delete k acc else Map.insert k (y - x) acc
+                _ -> Map.insert k (-x) acc
+            )
+            (overlapEucVec v k)
 
 calcOn :: V3 Range -> Int
 calcOn ((x0, x1), (y0, y1), (z0, z1)) = (x1 - x0) * (y1 - y0) * (z1 - z0)
