@@ -1,14 +1,11 @@
 module Day22 where
 
-import Control.Parallel (par)
 import Data.Char (isNumber)
-import Data.Function (on)
-import Data.List (foldl', sortBy, uncons)
-import Data.Maybe (mapMaybe)
-import Data.MultiSet (MultiSet)
-import Data.MultiSet qualified as MS
-import Paths_AOC2021
 import Data.List.Split (splitOneOf)
+import Data.Map.Strict (Map)
+import Data.Map.Strict qualified as Map
+import Paths_AOC2021 (getDataDir)
+import Data.List (uncons, foldl')
 
 type Range = (Int, Int)
 
@@ -31,13 +28,12 @@ parseInput s = (b', v)
     t = map (read @Int) $ filter (any isNumber) $ splitOneOf "=,." $ head s'
     v = ((head t, t !! 1 + 1), (t !! 2, t !! 3 + 1), (t !! 4, t !! 5 + 1))
 
-readIns :: [(Bool, V3 Range)] -> (MultiSet (V3 Range), MultiSet (V3 Range))
-readIns = foldl' f (MS.empty, MS.empty)
+readIns :: [(Bool, V3 Range)] -> Map (V3 Range) Int
+readIns = foldl' f Map.empty
   where
-    f (on, off) (b, v) = (on', off')
+    f acc (b, v) = (if b then Map.insertWith (+) v 1 else id) (Map.unionWith (+) acc (Map.foldlWithKey' g Map.empty acc))
       where
-        on' = (if b then MS.insert v else id) (MS.mapMaybe (overlapEucVec v) off <> on)
-        off' = par on' MS.mapMaybe (overlapEucVec v) on <> off
+        g acc k x = maybe acc (\k -> Map.insertWith (+) k (-x) acc) (overlapEucVec v k)
 
 calcOn :: V3 Range -> Int
 calcOn ((x0, x1), (y0, y1), (z0, z1)) = (x1 - x0) * (y1 - y0) * (z1 - z0)
@@ -47,8 +43,8 @@ day22 = do
   input <- map parseInput . lines <$> (getDataDir >>= readFile . (++ "/input/input22.txt"))
   let ans = readIns input
       area = ((-50, 50), (-50, 50), (-50, 50))
-      ansA = par ansB uncurry ((-) `on` (sum . MS.mapMaybe (fmap calcOn . overlapEucVec area))) ans
-      ansB = uncurry ((-) `on` (sum . MS.map calcOn)) ans
+      ansA = Map.foldlWithKey' (\acc k x -> maybe acc ((acc +) . (x *) . calcOn) (overlapEucVec area k)) 0 ans
+      ansB = Map.foldlWithKey' (\acc k x -> calcOn k * x + acc) 0 ans
   putStrLn
     . ("day22a: " ++)
     . show
