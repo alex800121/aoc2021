@@ -1,100 +1,95 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE MultiWayIf #-}
 
 module Day15 where
 
-import Data.Bifunctor (bimap)
+import Control.Monad.ST.Strict (ST, runST)
+import Data.Array.MArray qualified as MA
+import Data.Array.ST (STUArray)
+import Data.Array.Unboxed (Array, inRange)
+import Data.Array.Unboxed qualified as A
 import Data.Char (digitToInt, intToDigit)
-import Data.Map (Map)
-import Data.Map qualified as Map
-import Data.Maybe (mapMaybe)
-import Data.PQueue.Prio.Min (MinPQueue)
-import Data.PQueue.Prio.Min qualified as Q
-import Data.Set (Set)
-import Data.Set qualified as Set
+import Data.IntSet (IntSet)
+import Data.IntSet qualified as IS
+import Data.Vector.Unboxed qualified as UV
+import Data.Vector.Unboxed.Mutable qualified as UM
+import MyLib (drawArray, (+&))
+import Paths_AOC2021 (getDataDir)
 import Debug.Trace
-import MyLib (drawGraph, drawMap, sqrtCeiling)
-import Paths_AOC2021
 
 type Index = (Int, Int)
 
-type Risk = Int
+adjacentIndex = [(0, 1), (0, -1), (1, 0), (-1, 0)]
 
-type Hue = Int
-
-type Chitons = Map Index Int
-
-type Queue = MinPQueue Risk Index
-
-type Queue' = MinPQueue Hue (Index, Risk)
-
-type Cache = Set Index
-
-adjacent = [(0, 1), (0, -1), (1, 0), (-1, 0)]
-
-dijkstra :: Chitons -> Index -> Queue -> Cache -> Int
-dijkstra chitons end q cache
-  | start == end = nextRisk
-  | start `Set.member` cache = dijkstra chitons end q' cache
-  | otherwise = dijkstra chitons end q'' cache'
+inputParser s = ((width, height), v)
   where
-    ((risk, start), q') = Q.deleteFindMin q
-    nextRisk = risk + chitons Map.! start
-    nexts =
-      Q.fromList $
-        mapMaybe
-          ( \(x, y) ->
-              let next = (fst start + x, snd start + y)
-               in if Map.member next chitons && Set.notMember next cache
-                    then Just (nextRisk, next)
-                    else Nothing
-          )
-          adjacent
-    q'' = Q.union nexts q'
-    cache' = Set.insert start cache
+    a :: Array Index Int = A.amap digitToInt $ drawArray $ lines s
+    ((mx, my), (nx, ny)) = A.bounds a
+    width = nx - mx + 1
+    height = ny - my + 1
+    v = UV.generate (width * height) ((a A.!) . (`divMod` height))
 
--- aStar :: Chitons -> Index -> Queue' -> Cache -> Int
--- aStar chitons end q cache
---   | start == end = nextRisk
---   | start `Set.member` cache = aStar chitons end q' cache
---   | otherwise = aStar chitons end q'' cache'
---   where
---     ((hue, (start, risk)), q') = Q.deleteFindMin q
---     nextRisk = risk + chitons Map.! start
---     nextHue = nextRisk + sqrtCeiling ((fst end - fst start) ^ 2 + (snd end - snd start) ^ 2)
---     nexts =
---       Q.fromList $
---         mapMaybe
---           ( \(x, y) ->
---               let next = (fst start + x, snd start + y)
---                in if Map.member next chitons && Set.notMember next cache
---                     then Just (nextHue, (next, nextRisk))
---                     else Nothing
---           )
---           adjacent
---     q'' = Q.union nexts q'
---     cache' = Set.insert start cache
+manhattan (x, y) (z, w) = abs (x - z) + abs (y - w)
+
+type Q s = STUArray s (Int, Int) Int
+
+type L s = UM.STVector s Int
+
+dijkstra factor ((w, h), a) = runST $ do
+  q <- MA.newArray ((0, 0), (9, h * 2 + w * 2)) 0
+  cache <- UM.replicate (h * w * factor * factor) False
+  len <- UM.replicate 10 0
+  UM.write len 0 1
+  go cache len q 0
+  where
+    startIndex = (0, 0)
+    endIndex = (w * factor - 1, h * factor - 1)
+    start = toInt factor startIndex
+    end = toInt factor endIndex
+    getRisk (x, y) = ((r - 1 + fx + fy) `mod` 9) + 1
+      where
+        (fx, x') = x `divMod` w
+        (fy, y') = y `divMod` h
+        r = a UV.! toInt 1 (x', y')
+    toInt factor (x, y) = x * h * factor + y
+    fromInt factor = (`divMod` (h * factor))
+    go :: UM.STVector s Bool -> L s -> Q s -> Int -> ST s Int
+    go cache len q risk = do
+      counter <- UM.read len riskIndex
+      UM.write len riskIndex 0
+      f cache len q (pred counter)
+      where
+        riskIndex = risk `mod` 10
+        f cache len q counter | counter < 0 = go cache len q (succ risk)
+        f cache len q counter = do
+          xy <- MA.readArray q (riskIndex, counter)
+          g cache len q xy adjacentIndex
+          where
+            g cache len q xy [] = f cache len q (pred counter)
+            g cache len q xy (y : ys)
+              | xy' == endIndex = pure risk'
+              |inRange (startIndex, endIndex) xy' = do
+                  b <- UM.read cache xyInt'
+                  if b then g cache len q xy ys else do
+                      counter' <- UM.read len riskIndex'
+                      MA.writeArray q (riskIndex', counter') xyInt'
+                      UM.write len riskIndex' (counter' + 1)
+                      UM.write cache xyInt' True
+                      g cache len q xy ys
+              | otherwise = g cache len q xy ys
+              where
+                xy' = fromInt factor xy +& y
+                risk' = getRisk xy' + risk
+                xyInt' = toInt factor xy'
+                riskIndex' = risk' `mod` 10
 
 day15 :: IO ()
 day15 = do
-  smallMap <- drawMap (Just . digitToInt) . lines <$> (getDataDir >>= readFile . (++ "/input/input15.txt"))
-  -- smallMap <- drawMap (Just . digitToInt) . lines <$> readFile "input/test15.txt"
-  let keys = Map.keys smallMap
-      start = minimum keys
-      end = maximum keys
-      width = fst end - fst start + 1
-      height = snd end - snd start + 1
-      bigMap =
-        Map.unions
-          . Set.map
-            ( \(x, y) ->
-                let added = 10 - x - y
-                 in Map.mapKeys (bimap (+ (x * width)) (+ (y * height))) $ Map.map ((+ 1) . (`mod` 9) . subtract added) smallMap
-            )
-          $ Set.fromList [(x, y) | x <- [0 .. 4], y <- [0 .. 4]]
-      keys' = Map.keys bigMap
-      start' = minimum keys'
-      end' = maximum keys'
-      initRisk' = negate (bigMap Map.! start')
-      initHue' = initRisk' + ((fst end' - fst start') + (snd end' - snd start'))
-  putStrLn $ ("day15a: " ++) $ show $ dijkstra smallMap end (Q.singleton (negate (smallMap Map.! start)) start) Set.empty
-  putStrLn $ ("day15a: " ++) $ show $ dijkstra bigMap end' (Q.singleton (negate (bigMap Map.! start')) start') Set.empty
+  smallMap <- inputParser <$> (getDataDir >>= readFile . (++ "/input/input15.txt"))
+  putStrLn 
+    . ("day15a: " ++)
+    . show
+    $ dijkstra 1 smallMap
+  putStrLn 
+    . ("day15b: " ++)
+    . show
+    $ dijkstra 5 smallMap
