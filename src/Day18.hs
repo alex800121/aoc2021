@@ -33,7 +33,6 @@ addSNNum xs ys = map (f L) xs ++ map (f R) ys
     f s (l, i) = (l ++ [s], i)
 
 explode :: [SNNum] -> [SNNum] -> [SNNum]
--- explode xs ys | trace (show (reverse ys ++ xs)) False = undefined
 explode ((L : ls, x1) : (R : rs, x2) : xs) ys
   | length ls >= 4 && ls == rs =
       let rhs = case xs of
@@ -56,15 +55,19 @@ magnitude (s, i) = i * product (map (\case L -> 3; R -> 2) s)
 
 day18 :: IO ()
 day18 = do
-  -- input <- map (parseSNNum []) . lines <$> readFile "input/test18.txt"
   input <- map (parseSNNum []) . lines <$> (getDataDir >>= readFile . (++ "/input/input18.txt"))
-  putStrLn $ ("day18a: " ++) $ show $ sum $ map magnitude $ foldl1' (\acc -> (`explode` []) . addSNNum acc) input
-  putStrLn $
-    ("day18b: " ++) $
-      show $
-        maximum $
-          [ (sum . map magnitude) (explode (addSNNum x y) [])
-            | x <- input,
-              y <- input,
-              x /= y
-          ]
+  putStrLn
+    . ("day18a: " ++)
+    . show
+    . sum
+    . map magnitude
+    $ foldl1' (\acc -> (`explode` []) . addSNNum acc) input
+  putStrLn
+    . ("day18b: " ++)
+    . show
+    . maximum
+    $ [ (sum . map magnitude) (explode (addSNNum x y) [])
+        | x <- input,
+          y <- input,
+          x > y
+      ]
