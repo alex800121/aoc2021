@@ -1,55 +1,51 @@
-{-# LANGUAGE TupleSections #-}
-
 module Day12 where
 
-import Data.Char (isUpper)
+import Data.Char (isLower)
+import Data.IntMap.Strict (IntMap)
+import Data.IntMap.Strict qualified as IM
+import Data.IntSet (IntSet)
+import Data.IntSet qualified as IS
+import Data.List (findIndex, foldl', nub, sort)
 import Data.List.Split (splitOn)
-import Data.Map (Map)
-import Data.Map qualified as Map
-import Data.MultiSet (MultiSet)
-import Data.MultiSet qualified as MultiSet
-import Data.Set (Set)
-import Data.Set qualified as Set
+import Data.Map.Strict qualified as Map
 import Debug.Trace
 import Paths_AOC2021
 
-type Cave = Map String (Set String)
-
-type NotVisited = MultiSet (String, Set String, MultiSet String, MultiSet String)
-
-type Paths = NotVisited
-
-walkTill :: String -> Cave -> NotVisited -> Paths -> Paths
-walkTill end cave currentPath cache
-  | MultiSet.null currentPath = cache
-  | otherwise = walkTill end cave nextPath cache'
+inputParser s = (small + 2, im)
   where
-    (ended, currentPath') = MultiSet.partition ((== end) . (\(x, _, _, _) -> x)) currentPath
-    cache' = MultiSet.union cache ended
-    f (start, smallCaves, path, visited)
-      | isUpper (head start) || start == "start" || start == "end" = paths
-      | start `Set.member` smallCaves = paths1
-      | otherwise = paths2
+    ss = map (splitOn "-") $ lines s
+    ss' =
+      nub
+        . sort
+        . filter (`notElem` ["start", "end"])
+        $ concat ss
+    is =
+      Map.fromList
+        . (`zip` [0 ..])
+        $ ["start", "end"] <> ss'
+    Just small = findIndex (isLower . head) ss'
+    im = foldl' f IM.empty ss
+    f acc [x, y] = IM.insertWith (<>) ix [iy] $ IM.insertWith (<>) iy [ix] acc
       where
-        path' = if isUpper (head start) then path else MultiSet.delete start path
-        nexts = Set.filter ((> 0) . (`MultiSet.occur` path)) $ cave Map.! start
-        visited' = MultiSet.insert start visited
-        paths = MultiSet.fromSet $ Set.map (,smallCaves,path',visited') nexts
-        paths1 = MultiSet.fromSet $ Set.map (,smallCaves,MultiSet.fromSet $ (Set.\\ smallCaves) $ MultiSet.toSet path',visited') $ Set.filter (`Set.notMember` smallCaves) nexts
-        paths2 = MultiSet.fromSet $ Set.map (,Set.insert start smallCaves,path',visited') nexts
-    nextPath = MultiSet.unionsMap f currentPath'
+        ix = is Map.! x
+        iy = is Map.! y
+
+dfs im small end !visitedTwice (!start, !visited)
+  | start == end = 1
+  | visitedTwice && start >= small && start `IS.member` visited = 0
+  | otherwise = foldl' (\acc x -> acc + dfs im small end (visitedTwice || start >= small && start `IS.member` visited) x) 0 choices
+  where
+    choices =
+      [(start', IS.insert start visited) | start' <- im IM.! start, start' /= 0]
 
 day12 :: IO ()
 day12 = do
-  input <- Map.map Set.fromList . Map.unionsWith (<>) . map ((\(x : y : _) -> Map.fromList [(x, [y]), (y, [x])]) . splitOn "-") . lines <$> (getDataDir >>= readFile . (++ "/input/input12.txt"))
-  let notVisitedA = MultiSet.fromSet $ Map.keysSet input
-      notVisitedB =
-        MultiSet.fold
-          ( \x acc -> case x of
-              x | x == "start" || x == "end" || isUpper (head x) -> acc
-              x -> MultiSet.insert x acc
-          )
-          notVisitedA
-          notVisitedA
-  putStrLn $ ("day12a: " ++) $ show $ MultiSet.size $ walkTill "end" input (MultiSet.singleton ("start", Set.empty, notVisitedA, MultiSet.empty)) MultiSet.empty
-  putStrLn $ ("day12b: " ++) $ show $ MultiSet.size $ walkTill "end" input (MultiSet.singleton ("start", Set.empty, notVisitedB, MultiSet.empty)) MultiSet.empty
+  (small, im) <- inputParser <$> (getDataDir >>= readFile . (++ "/input/input12.txt"))
+  putStrLn
+    . ("day12a: " ++)
+    . show
+    $ dfs im small 1 True (0, IS.empty)
+  putStrLn
+    . ("day12b: " ++)
+    . show
+    $ dfs im small 1 False (0, IS.empty)
